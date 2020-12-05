@@ -39,3 +39,17 @@ class Product(TimeModel):
 class LikeProduct(TimeModel):
   profile = models.ForeignKey(Profile, related_name='like_products',on_delete=models.SET_NULL, null=True)
   product = models.ForeignKey(Product, related_name='like_profiles',on_delete=models.SET_NULL, null=True)
+
+class ChatRoom(TimeModel):
+  product = models.ForeignKey(Product, related_name='chatrooms',on_delete=models.SET_NULL, null=True)
+  will_buyer = models.ForeignKey(Profile, related_name='chatrooms',on_delete=models.SET_NULL, null=True)
+  
+  class Meta:
+    unique_together = (
+      ('product','will_buyer'),
+    )
+
+class Message(TimeModel):
+  chatroom = models.ForeignKey(ChatRoom, related_name='messages',on_delete=models.CASCADE)
+  body = models.CharField(max_length=500)
+  written_by = models.ForeignKey(Profile, related_name='messages',on_delete=models.SET_NULL, null=True)
