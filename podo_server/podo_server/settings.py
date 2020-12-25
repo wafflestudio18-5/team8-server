@@ -35,7 +35,7 @@ DEBUG_TOOLBAR = env('DEBUG_TOOLBAR', cast=str, default='false') in ('true', 'Tru
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    "*.podomarket.shop",
+    ".podomarket.shop",
     '.ap-northeast-2.compute.amazonaws.com',
 ]
 
@@ -45,6 +45,8 @@ CSRF_COOKIE_SECURE = IS_PRODUCTION
 SESSION_COOKIE_SECURE = IS_PRODUCTION
 SECURE_SSL_REDIRECT = IS_PRODUCTION
 # Application definition
+
+print("is production?", IS_PRODUCTION)
 
 INSTALLED_APPS = [
     'podo_app.apps.PodoAppConfig',
