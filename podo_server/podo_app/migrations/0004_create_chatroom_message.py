@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('podo_app', '0003_likeproduct_product'),
+        ('podo_app', '0003_create_likeproduct_product'),
     ]
 
     operations = [
