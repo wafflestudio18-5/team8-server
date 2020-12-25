@@ -19,6 +19,9 @@ from django.urls import path, include
 
 from podo_server.views import ping
 
+
+from podo_server.views import ping
+
 urlpatterns = [
     path('', ping),
     path('api/v1/', include('user.urls')),
