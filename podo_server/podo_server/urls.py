@@ -16,6 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+
+from podo_server.views import ping
+
 urlpatterns = [
+    path('', ping),
     path('admin/', admin.site.urls),
 ]
