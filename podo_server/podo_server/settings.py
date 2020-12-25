@@ -35,7 +35,7 @@ DEBUG_TOOLBAR = env('DEBUG_TOOLBAR', cast=str, default='false') in ('true', 'Tru
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    ".podomarket.shop",
+    "*.podomarket.shop",
     '.ap-northeast-2.compute.amazonaws.com',
 ]
 
@@ -74,7 +74,6 @@ MIDDLEWARE = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
-
     )
 }
 
@@ -109,8 +108,6 @@ WSGI_APPLICATION = 'podo_server.wsgi.application'
 SYSTEM_ENV = os.environ.get('SYSTEM_ENV', None)
 
 
-USE_PRODUCTION_DB = env("USE_PRODUCTION_DB", cast=str, default="false") in ('true', 'True')
-
 if SYSTEM_ENV == 'GITHUB_WORKFLOW':
     DATABASES = {
         'default': {
@@ -122,7 +119,7 @@ if SYSTEM_ENV == 'GITHUB_WORKFLOW':
             'PASSWORD': 'password',
         }
     }
-elif USE_PRODUCTION_DB:
+elif IS_PRODUCTION:
     DATABASES = {
         # Parse `DATABASE_URL` environment variable
         "default": dj_database_url.config(
