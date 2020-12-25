@@ -106,6 +106,8 @@ WSGI_APPLICATION = 'podo_server.wsgi.application'
 SYSTEM_ENV = os.environ.get('SYSTEM_ENV', None)
 
 
+USE_PRODUCTION_DB = env("USE_PRODUCTION_DB", cast=str, default="false") in ('true', 'True')
+
 if SYSTEM_ENV == 'GITHUB_WORKFLOW':
     DATABASES = {
         'default': {
@@ -117,7 +119,7 @@ if SYSTEM_ENV == 'GITHUB_WORKFLOW':
             'PASSWORD': 'password',
         }
     }
-elif IS_PRODUCTION:
+elif USE_PRODUCTION_DB:
     DATABASES = {
         # Parse `DATABASE_URL` environment variable
         "default": dj_database_url.config(
