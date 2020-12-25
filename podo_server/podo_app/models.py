@@ -11,6 +11,7 @@ class Profile(TimeModel):
   user = models.ForeignKey(User, related_name='profile',on_delete=models.CASCADE)
   nickname = models.CharField(max_length=100)
   temperature = models.FloatField(default=36.5)
+  image = models.URLField()
 
 class City(TimeModel):
   name = models.CharField(max_length=100)
@@ -35,6 +36,10 @@ class Product(TimeModel):
 
   city = models.ForeignKey(City, related_name='here_products',on_delete=models.SET_NULL, null=True)
   distance_range = models.PositiveSmallIntegerField(default=0)
+
+class ProductImage(TimeModel):
+  product = models.ForeignKey(Product, related_name='images',on_delete=models.CASCADE)
+  image = models.URLField()
 
 class LikeProduct(TimeModel):
   profile = models.ForeignKey(Profile, related_name='like_products',on_delete=models.SET_NULL, null=True)
