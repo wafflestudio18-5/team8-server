@@ -35,7 +35,7 @@ DEBUG_TOOLBAR = env('DEBUG_TOOLBAR', cast=str, default='false') in ('true', 'Tru
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    "*.podomarket.shop",
+    ".podomarket.shop",
     '.ap-northeast-2.compute.amazonaws.com',
 ]
 
