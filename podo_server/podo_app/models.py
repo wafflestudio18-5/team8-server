@@ -44,6 +44,7 @@ class ProductImage(TimeModel):
 class LikeProduct(TimeModel):
   profile = models.ForeignKey(Profile, related_name='like_products',on_delete=models.SET_NULL, null=True)
   product = models.ForeignKey(Product, related_name='like_profiles',on_delete=models.SET_NULL, null=True)
+  active = models.BooleanField(default=True)
 
 class ChatRoom(TimeModel):
   product = models.ForeignKey(Product, related_name='chatrooms',on_delete=models.SET_NULL, null=True)
