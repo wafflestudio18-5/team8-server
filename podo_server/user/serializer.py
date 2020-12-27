@@ -35,7 +35,7 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
     user_id=serializers.IntegerField(required=True)
     full_name = serializers.CharField(required=False)
     nickname = serializers.CharField(required=False)
-    image=serializers.URLField(required=False)
+    image=serializers.URLField(required=False, allow_null=True)
     class Meta:
         model=Profile
         fields=(
@@ -49,3 +49,4 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
 #            "Products sold",
         )
 
+#    def 
