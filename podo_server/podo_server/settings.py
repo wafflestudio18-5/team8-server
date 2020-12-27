@@ -29,12 +29,24 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", cast=str, default="local_key")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+DEBUG = env('DEBUG', cast=str, default='false') in ('true', 'True')
+DEBUG_TOOLBAR = env('DEBUG_TOOLBAR', cast=str, default='false') in ('true', 'True')
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    ".podomarket.shop",
+    '.ap-northeast-2.compute.amazonaws.com',
+]
 
+IS_PRODUCTION = env("IS_PRODUCTION", cast=str, default="false") in ('true', 'True')
 
+CSRF_COOKIE_SECURE = IS_PRODUCTION
+SESSION_COOKIE_SECURE = IS_PRODUCTION
+SECURE_SSL_REDIRECT = IS_PRODUCTION
 # Application definition
+
+print("is production?", IS_PRODUCTION)
 
 INSTALLED_APPS = [
     'podo_app.apps.PodoAppConfig',
@@ -45,6 +57,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -56,6 +70,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    )
+}
+
+if DEBUG_TOOLBAR:
+    INSTALLED_APPS.append('debug_toolbar')
+    MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+    INTERNAL_IPS = ('127.0.0.1',)
 
 ROOT_URLCONF = 'podo_server.urls'
 
@@ -80,17 +105,42 @@ WSGI_APPLICATION = 'podo_server.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
+SYSTEM_ENV = os.environ.get('SYSTEM_ENV', None)
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': '127.0.0.1',
-        'PORT': 3306,
-        'NAME': 'podo_db',
-        'USER': 'waffle-backend',
-        'PASSWORD': 'seminar',
+
+USE_PRODUCTION_DB = env("USE_PRODUCTION_DB", cast=str, default="false") in ('true', 'True')
+
+if SYSTEM_ENV == 'GITHUB_WORKFLOW':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'HOST': '127.0.0.1',
+            'PORT': 3306,
+            'NAME': 'waffle_backend_assignment_2',
+            'USER': 'root',
+            'PASSWORD': 'password',
+        }
     }
-}
+elif USE_PRODUCTION_DB:
+    DATABASES = {
+        # Parse `DATABASE_URL` environment variable
+        "default": dj_database_url.config(
+            default="mysql://waffle-backend:seminar@localhost:3306/podo_db"
+        )
+    }
+else :
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'HOST': '127.0.0.1',
+            'PORT': 3306,
+            'NAME': 'podo_db',
+            'USER': 'waffle-backend',
+            'PASSWORD': 'seminar',
+        }
+    }
+
+DATABASES['default']['OPTIONS'] = {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
 
 
 # Password validation
@@ -115,9 +165,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 
@@ -130,3 +180,4 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
