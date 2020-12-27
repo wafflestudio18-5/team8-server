@@ -26,7 +26,6 @@ class UserViewSet(viewsets.GenericViewSet):
         access_token=request.data['access_token']
         social_url=""
         social=request.data['social']
-
         if social=="Google":
             social_url="https://oauth2.googleapis.com/tokeninfo?id_token={ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)
             token_response = requests.get(
@@ -81,7 +80,6 @@ class UserViewSet(viewsets.GenericViewSet):
             nickname=full_name
             
             user=User.objects.create_user(username)
-#change if possible
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
