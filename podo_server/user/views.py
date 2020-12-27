@@ -11,7 +11,6 @@ from django.db import models
 import requests
 from podo_app.models import Profile, ProfileCity, City
 from user.serializer import UserAndProfileSerializer, ProfileSerializer, UserSerializer
-import random 
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -27,23 +26,28 @@ class UserViewSet(viewsets.GenericViewSet):
         access_token=request.data['access_token']
         social_url=""
         social=request.data['social']
-#change to google
-        if social=="Github":
-            social_url="https://api.github.com/user"
-            authorization={"Authorization": "Bearer {ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)}
+        if social=="Google":
+            social_url="https://oauth2.googleapis.com/tokeninfo?id_token={ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)
+            token_response = requests.get(
+                social_url
+                )
+            token_response=json.loads(token_response.text)
+            if token_response==None:
+                return Response("Oauth has not returned any data", status=status.HTTP_404_NOT_FOUND)
+            username=social+"_"+str(token_response["sub"])
+
+
+
         elif social=="Kakao":
             social_url="https://kapi.kakao.com/v2/user/me"
-            authorization={"Authorization": "Bearer {ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)}
-        
-        token_response = requests.get(
-            social_url,
-            headers=authorization
-            )
-        token_response=json.loads(token_response.text)
+            authorization={"Authorization": "Bearer {ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)}        
+            token_response = requests.get(
+                social_url,
+                headers=authorization
+                )
+            token_response=json.loads(token_response.text)
+            username=social+"_"+str(token_response["id"])
 
-        if token_response==None:
-            return Response("Oauth has not returned any data", status=status.HTTP_404_NOT_FOUND)
-        username=social+"_"+str(token_response["id"])
 
         new=False
         try:
@@ -55,12 +59,17 @@ class UserViewSet(viewsets.GenericViewSet):
         
         if new:
             try:
-                full_name=token_response["kakao_account"]["profile"]["nickname"]
+                if social=="Google":
+                    full_name=token_response["name"]
+                elif social=="Kakao":
+                    full_name=token_response["kakao_account"]["profile"]["nickname"]
             except KeyError:
                 return Response("full_name is required", status=status.HTTP_400_BAD_REQUEST)
-#img check
             try:
-                image=token_response["properties"]["thumbnail"]
+                if social=="Google":
+                    image=token_response["picture"]
+                elif social=="Kakao":
+                    image=token_response["properties"]["thumbnail"]
             except KeyError:
                 image=None
 
@@ -70,7 +79,6 @@ class UserViewSet(viewsets.GenericViewSet):
                 nickname=full_name
             
             user=User.objects.create_user(username)
-#change if possible
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
@@ -92,7 +100,6 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
-#        data['token']=user.auth_token.key
 
         if new:
             return Response(data, status=status.HTTP_201_CREATED)
