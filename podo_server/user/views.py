@@ -107,7 +107,7 @@ class UserViewSet(viewsets.GenericViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-  def update(self, request, pk=None):
+    def update(self, request, pk=None):
         if pk != 'me':
             return Response({"error": "Can't update other Users information"}, status=status.HTTP_403_FORBIDDEN)
         user = request.user
