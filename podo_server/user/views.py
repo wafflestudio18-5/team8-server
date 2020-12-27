@@ -27,6 +27,7 @@ class UserViewSet(viewsets.GenericViewSet):
         access_token=request.data['access_token']
         social_url=""
         social=request.data['social']
+#change to google
         if social=="Github":
             social_url="https://api.github.com/user"
             authorization={"Authorization": "Bearer {ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)}
@@ -57,9 +58,9 @@ class UserViewSet(viewsets.GenericViewSet):
                 return Response("full_name is required", status=status.HTTP_400_BAD_REQUEST)
 #img check
             try:
-                image=token_response["properties"][]
+                image=token_response["properties"]["thumbnail"]
             except KeyError:
-                nickname=full_name
+                image=None
 
             try:
                 nickname=request.data["nickname"]
@@ -67,9 +68,10 @@ class UserViewSet(viewsets.GenericViewSet):
                 nickname=full_name
 
             user=User.objects.create_user(username)
+#change if possible
             user.first_name=full_name
             user.save()
-            profile=Profile.objects.create(user=user, nickname=nickname)
+            profile=Profile.objects.create(user=user, nickname=nickname, image=image)
             profile.save()
             login(request, user)
         else:
