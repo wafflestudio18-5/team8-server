@@ -10,12 +10,12 @@ import user.models as usermodel
 from django.db import models
 import requests
 from podo_app.models import Profile
-from user.serializer import UserandProfileSerializer
+from user.serializer import UserAndProfileSerializer, ProfileSerializer, UserSerializer
 import random 
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
-    serializer_class = UserandProfileSerializer
+    serializer_class = UserAndProfileSerializer
     permission_classes = (IsAuthenticated(), )
 
     def get_permissions(self):
@@ -76,14 +76,18 @@ class UserViewSet(viewsets.GenericViewSet):
             login(request, user)
         else:
             login(request, user)
+            profile=user.profile.get()
             full_name=user.first_name
-            nickname=user.profile.get().nickname
+            nickname=profile.nickname
+            image=profile.image
 
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
+#        if image!=None:
+#            body["image"]=image
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
-        data['token']=user.auth_token.key
+#        data['token']=user.auth_token.key
 
         if new:
             return Response(data, status=status.HTTP_201_CREATED)
