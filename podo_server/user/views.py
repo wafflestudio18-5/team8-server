@@ -81,7 +81,6 @@ class UserViewSet(viewsets.GenericViewSet):
             nickname=full_name
             
             user=User.objects.create_user(username)
-#change if possible
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
