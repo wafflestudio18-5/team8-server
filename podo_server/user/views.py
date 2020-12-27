@@ -83,7 +83,11 @@ class UserViewSet(viewsets.GenericViewSet):
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
+<<<<<<< HEAD
             if bool(image):
+=======
+            if image!=None:
+>>>>>>> fix mistake
                 profile.image=image
 
             profile.save()
@@ -95,12 +99,18 @@ class UserViewSet(viewsets.GenericViewSet):
             full_name=user.first_name
             nickname=profile.nickname
             image=profile.image
+<<<<<<< HEAD
             products_sold=profile.products_sold
             products_bought=profile.products_bought
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
         if bool(image):
             body["image"]=image        
+=======
+        body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
+        if image!="":
+            body["image"]=image
+>>>>>>> fix mistake
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
