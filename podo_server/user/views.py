@@ -9,7 +9,7 @@ from rest_framework.response import Response
 import user.models as usermodel
 from django.db import models
 import requests
-from podo_app.models import Profile
+from podo_app.models import Profile, ProfileCity, City
 from user.serializer import UserAndProfileSerializer, ProfileSerializer, UserSerializer
 import random 
 
@@ -106,6 +106,21 @@ class UserViewSet(viewsets.GenericViewSet):
         logout(request)
         return Response(status=status.HTTP_200_OK)
 
+    def retrieve(self, request, pk=None):
+        user=User.objects.get(id=pk)
+        profile=user.profile.get()
+        full_name=user.first_name
+        nickname=profile.nickname
+        image=profile.image
+        body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
+        if image!=None:
+            body["image"]=image
+        serializer=self.get_serializer(data=body)
+        serializer.is_valid(raise_exception=True)
+        data=serializer.data
+        return Response(data, status=status.HTTP_200_OK)
+        
+
 
     def update(self, request, pk=None):
         if pk != 'me':
@@ -120,6 +135,8 @@ class UserViewSet(viewsets.GenericViewSet):
         data=serializer.data  
         return Response(data, status=status.HTTP_200_OK)
 
+
+
     def delete(self, request, pk=None):
         if pk != 'me':
             return Response({"error": "Can't update other Users information"}, status=status.HTTP_403_FORBIDDEN)
@@ -130,3 +147,45 @@ class UserViewSet(viewsets.GenericViewSet):
         user.delete()
         profile.delete()
         return Response(status=status.HTTP_200_OK)
+
+
+    @action(detail=False, methods=['POST', 'PUT',  'DEL'])
+    def city(self, request)
+        user=request.user
+        profile=user.profile.get()
+        city_id=request.data["city_id"]
+        city=City.objects.get(id=city_id)
+        if request.method=="POST":
+            profilecity=ProfileCity.create(profile=profile, city=city)
+
+            body={"nickname":profile.nickname, "city":[]}
+            profilecities=profilecity.filter(profile=profile)
+            for i in profilecities:
+                city=i.city
+                body["city"].append({"city_name":city.name, "city_location":city.location}) 
+            return Response(body, status.HTTP_201_CREATED)
+
+        elif request.method=="PUT":
+            former_city_id=request.data["former_city_id"]
+            former_city=City.objects.get(id=former_city_id)
+            profilecity=ProfileCity.objects.get(profile=profile, city=former_city)
+            profilecity.city=city
+
+            body={"nickname":profile.nickname, "city":[]}
+            profilecities=profilecity.filter(profile=profile)
+            for i in profilecities:
+                city=i.city
+                body["city"].append({"city_name":city.name, "city_location":city.location}) 
+            return Response(body, status.HTTP_200_OK)
+        
+        elif request.method=="DEL":
+            profilecity=ProfileCity.objects.get(profile=profile, city=city)
+            profilecity.delete()
+
+            body={"nickname":profile.nickname, "city":[]}
+            profilecities=profilecity.filter(profile=profile)
+            for i in profilecities:
+                city=i.city
+                body["city"].append({"city_name":city.name, "city_location":city.location}) 
+            return Response(body, status.HTTP_200_OK)
+
