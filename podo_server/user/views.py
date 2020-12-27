@@ -82,7 +82,6 @@ class UserViewSet(viewsets.GenericViewSet):
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
-            return Response(image)
             if image!=None:
                 profile.image=image
 
@@ -95,7 +94,7 @@ class UserViewSet(viewsets.GenericViewSet):
             nickname=profile.nickname
             image=profile.image
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
-        if image!=None:
+        if image!="":
             body["image"]=image
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
@@ -157,7 +156,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
 
     @action(detail=False, methods=['POST', 'PUT',  'DEL'])
-    def city(self, request)
+    def city(self, request):
         user=request.user
         profile=user.profile.get()
         city_id=request.data["city_id"]
