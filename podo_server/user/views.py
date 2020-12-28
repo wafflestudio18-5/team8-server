@@ -46,6 +46,10 @@ class UserViewSet(viewsets.GenericViewSet):
                 headers=authorization
                 )
             token_response=json.loads(token_response.text)
+            try: 
+                id=token_response["id"]
+            except KeyError:
+                return Response(token_response)       
             username=social+"_"+str(token_response["id"])
 
 
@@ -55,7 +59,6 @@ class UserViewSet(viewsets.GenericViewSet):
         except User.DoesNotExist:
             new=True
                 
-#        return Response(user.profile.get().id)        
         
         if new:
             try:
@@ -93,12 +96,16 @@ class UserViewSet(viewsets.GenericViewSet):
             full_name=user.first_name
             nickname=profile.nickname
             image=profile.image
+
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
         if image!="":
-            body["image"]=image
+            body["image"]=image        
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
+
+        token, created=Token.objects.get_or_create(user=user)
+        data["token"]=token.key
 
         if new:
             return Response(data, status=status.HTTP_201_CREATED)
