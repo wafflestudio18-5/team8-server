@@ -83,11 +83,7 @@ class UserViewSet(viewsets.GenericViewSet):
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
-<<<<<<< HEAD
             if bool(image):
-=======
-            if image!=None:
->>>>>>> fix mistake
                 profile.image=image
 
             profile.save()
@@ -100,6 +96,7 @@ class UserViewSet(viewsets.GenericViewSet):
             nickname=profile.nickname
             image=profile.image
 <<<<<<< HEAD
+<<<<<<< HEAD
             products_sold=profile.products_sold
             products_bought=profile.products_bought
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
@@ -111,6 +108,12 @@ class UserViewSet(viewsets.GenericViewSet):
         if image!="":
             body["image"]=image
 >>>>>>> fix mistake
+=======
+
+        body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
+        if image!="":
+            body["image"]=image        
+>>>>>>> Update views.py
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
@@ -118,7 +121,11 @@ class UserViewSet(viewsets.GenericViewSet):
         token, created=Token.objects.get_or_create(user=user)
         data["token"]=token.key
 
+<<<<<<< HEAD
         if is_new:
+=======
+        if new:
+>>>>>>> Update views.py
             return Response(data, status=status.HTTP_201_CREATED)
         else:
             return Response(data, status=status.HTTP_200_OK)
