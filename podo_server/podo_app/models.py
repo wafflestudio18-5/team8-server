@@ -12,6 +12,9 @@ class Profile(TimeModel):
   nickname = models.CharField(max_length=100)
   temperature = models.FloatField(default=36.5)
   image = models.URLField()
+  products_sold= models.IntegerField(default=0)
+  products_bought= models.IntegerField(default=0)
+
 
 class City(TimeModel):
   name = models.CharField(max_length=100)
