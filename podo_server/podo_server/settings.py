@@ -33,11 +33,10 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", cast=str, default="local_key")
 DEBUG = env('DEBUG', cast=str, default='false') in ('true', 'True')
 DEBUG_TOOLBAR = env('DEBUG_TOOLBAR', cast=str, default='false') in ('true', 'True')
 ALLOWED_HOSTS = [
-#    "localhost",
-#    "127.0.0.1",
-#    ".podomarket.shop",
-#    '.ap-northeast-2.compute.amazonaws.com',
-    "*"
+    "localhost",
+    "127.0.0.1",
+    ".podomarket.shop",
+    '.ap-northeast-2.compute.amazonaws.com',
 ]
 
 IS_PRODUCTION = env("IS_PRODUCTION", cast=str, default="false") in ('true', 'True')
