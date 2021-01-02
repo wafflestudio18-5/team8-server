@@ -33,9 +33,13 @@ class UserViewSet(viewsets.GenericViewSet):
                 social_url
                 )
             token_response=json.loads(token_response.text)
+#            return Response(token_response)
             if token_response==None:
-                return Response("Oauth has not returned any data", status=status.HTTP_404_NOT_FOUND)
-            username=social+"_"+str(token_response["sub"])
+                return Response({"error":"Oauth has not returned any data"}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                username=social+"_"+str(token_response["sub"])
+            except KeyError:
+                return Response(token_response, status=status.HTTP_400_BAD_REQUEST)
 
         elif social=="Kakao":
             social_url="https://kapi.kakao.com/v2/user/me"
@@ -45,11 +49,17 @@ class UserViewSet(viewsets.GenericViewSet):
                 headers=authorization
                 )
             token_response=json.loads(token_response.text)
+
+            if token_response==None:
+                return Response({"error":"Oauth has not returned any data"}, status=status.HTTP_404_NOT_FOUND)
             try: 
                 id=token_response["id"]
             except KeyError:
-                return Response(token_response)       
+                error={"error":token_response["msg"]}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)       
             username=social+"_"+str(token_response["id"])
+        else:
+            return Response({"error":"'social' parameter is wrong"}, status=status.HTTP_400_BAD_REQUEST)
 
         new=False
         try:
@@ -65,7 +75,7 @@ class UserViewSet(viewsets.GenericViewSet):
                 elif social=="Kakao":
                     full_name=token_response["kakao_account"]["profile"]["nickname"]
             except KeyError:
-                return Response("full_name is required", status=status.HTTP_400_BAD_REQUEST)
+                return Response("'full_name' is required", status=status.HTTP_404_NOT_FOUND)
             try:
                 if social=="Google":
                     image=token_response["picture"]
@@ -74,10 +84,7 @@ class UserViewSet(viewsets.GenericViewSet):
             except KeyError:
                 image=None
 
-            try:
-                nickname=request.data["nickname"]
-            except KeyError:
-                nickname=full_name
+            nickname=full_name
             
             user=User.objects.create_user(username)
             user.first_name=full_name
@@ -96,7 +103,8 @@ class UserViewSet(viewsets.GenericViewSet):
             image=profile.image
             products_sold=profile.products_sold
             products_bought=profile.products_bought
-        body={"user_id":user.id, "full_name":full_name, "nickname":nickname, "products_bought":products_bought, "products_sold":products_sold}
+        body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
+            "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
         if image!="":
             body["image"]=image        
         serializer=self.get_serializer(data=body)
@@ -129,7 +137,8 @@ class UserViewSet(viewsets.GenericViewSet):
         products_sold=profile.products_sold
         products_bought=profile.products_bought
 
-        body={"user_id":user.id, "full_name":full_name, "nickname":nickname, "products_bought":products_bought, "products_sold":products_sold}
+        body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
+            "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
         if image!="":
             body["image"]=image
         serializer=self.get_serializer(data=body)
@@ -139,7 +148,7 @@ class UserViewSet(viewsets.GenericViewSet):
         
     def update(self, request, pk=None):
         if pk != 'me':
-            return Response({"error": "Can't update other Users information"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Can't update other user's information"}, status=status.HTTP_403_FORBIDDEN)
         user = request.user
         profile=user.profile.get()
         if not user.is_authenticated:
@@ -183,7 +192,11 @@ class UserViewSet(viewsets.GenericViewSet):
         user=request.user
         profile=user.profile.get()
         city_id=request.data["city_id"]
-        city=City.objects.get(id=city_id)
+        try:
+            city=City.objects.get(id=city_id)
+        except City.DoesNotExist:
+            return Response({"error":"there is no city with the given id"}, status=status.HTTP_400_BAD_REQUEST)
+
         if request.method=="POST":
             profilecity=ProfileCity.create(profile=profile, city=city)
 
@@ -196,7 +209,10 @@ class UserViewSet(viewsets.GenericViewSet):
 
         elif request.method=="PUT":
             former_city_id=request.data["former_city_id"]
-            former_city=City.objects.get(id=former_city_id)
+            try:
+                former_city=City.objects.get(id=former_city_id)
+            except City.DoesNotExist:
+                return Response({"error":"there is no city with the given id"}, status=status.HTTP_400_BAD_REQUEST)
             profilecity=ProfileCity.objects.get(profile=profile, city=former_city)
             profilecity.city=city
 
@@ -225,5 +241,5 @@ class UserViewSet(viewsets.GenericViewSet):
                 instance={"city_id": city.id, "city_name":city.name, "city_location":city.location}
                 body.append(instance)
             
-            return Response({"data":body}, status=status.HTTP_200_OK)
+            return Response({"city":body}, status=status.HTTP_200_OK)
 
