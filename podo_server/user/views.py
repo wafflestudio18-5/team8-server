@@ -10,7 +10,7 @@ import user.models as usermodel
 from django.db import models
 import requests
 from podo_app.models import Profile, ProfileCity, City
-from user.serializer import UserAndProfileSerializer,  UserSerializer
+from user.serializer import UserAndProfileSerializer
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()

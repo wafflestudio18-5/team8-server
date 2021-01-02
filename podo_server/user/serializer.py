@@ -3,16 +3,6 @@ from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from podo_app.models import Profile
 
-
-class UserSerializer(serializers.ModelSerializer):
-    first_name = serializers.CharField(required=False)
-
-    class Meta:
-        model = User
-        fields = (
-            'first_name',
-        )
-
 class UserAndProfileSerializer(serializers.ModelSerializer):
     user_id=serializers.IntegerField()
     full_name = serializers.CharField()
