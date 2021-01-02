@@ -10,7 +10,7 @@ import user.models as usermodel
 from django.db import models
 import requests
 from podo_app.models import Profile, ProfileCity, City
-from user.serializer import UserAndProfileSerializer, ProfileSerializer, UserSerializer
+from user.serializer import UserAndProfileSerializer,  UserSerializer
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -21,11 +21,8 @@ class UserViewSet(viewsets.GenericViewSet):
         if self.action in ('create', 'login', 'update'):
             return (AllowAny(), )
         return self.permission_classes
-
+    
     def create(self, request):
-#    
-#    @action(detail=False, methods=['PUT'])
-#    def login(self, request):
         access_token=request.data['access_token']
         social_url=""
         social=request.data['social']
@@ -97,8 +94,9 @@ class UserViewSet(viewsets.GenericViewSet):
             full_name=user.first_name
             nickname=profile.nickname
             image=profile.image
-
-        body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
+            products_sold=profile.products_sold
+            products_bought=profile.products_bought
+        body={"user_id":user.id, "full_name":full_name, "nickname":nickname, "products_bought":products_bought, "products_sold":products_sold}
         if image!="":
             body["image"]=image        
         serializer=self.get_serializer(data=body)
@@ -121,34 +119,44 @@ class UserViewSet(viewsets.GenericViewSet):
         return Response(status=status.HTTP_200_OK)
 
     def retrieve(self, request, pk=None):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
         user=User.objects.get(id=pk)
         profile=user.profile.get()
         full_name=user.first_name
         nickname=profile.nickname
         image=profile.image
-        body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
-        if image!=None:
+        products_sold=profile.products_sold
+        products_bought=profile.products_bought
+
+        body={"user_id":user.id, "full_name":full_name, "nickname":nickname, "products_bought":products_bought, "products_sold":products_sold}
+        if image!="":
             body["image"]=image
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
         return Response(data, status=status.HTTP_200_OK)
         
-
-
     def update(self, request, pk=None):
         if pk != 'me':
             return Response({"error": "Can't update other Users information"}, status=status.HTTP_403_FORBIDDEN)
         user = request.user
+        profile=user.profile.get()
         if not user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-        profile=user.profile.get()
 
-        profile.nickname        
+        data=request.data
+        try:
+            data["full_name"]
+            userserializer=UserSerializer(user, data={"first_name":data["full_name"]}, partial=True)
+            userserializer.is_valid(raise_exception=True)
+            userserializer.save()
+        except KeyError:
+            pass
 
-        ####more        
-        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer = self.get_serializer(profile, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
+        serializer.save()
         data=serializer.data  
         return Response(data, status=status.HTTP_200_OK)
 
@@ -157,6 +165,8 @@ class UserViewSet(viewsets.GenericViewSet):
     def delete(self, request, pk=None):
         if pk != 'me':
             return Response({"error": "Can't update other Users information"}, status=status.HTTP_403_FORBIDDEN)
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         user=request.user
         profile=request.user.profile.get()
@@ -166,8 +176,10 @@ class UserViewSet(viewsets.GenericViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-    @action(detail=False, methods=['POST', 'PUT',  'DEL'])
+    @action(detail=False, methods=['POST', 'PUT',  'DEL', 'GET'])
     def city(self, request):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
         user=request.user
         profile=user.profile.get()
         city_id=request.data["city_id"]
@@ -179,7 +191,7 @@ class UserViewSet(viewsets.GenericViewSet):
             profilecities=profilecity.filter(profile=profile)
             for i in profilecities:
                 city=i.city
-                body["city"].append({"city_name":city.name, "city_location":city.location}) 
+                body["city"].append({"city_id":city.id, "city_name":city.name, "city_location":city.location}) 
             return Response(body, status.HTTP_201_CREATED)
 
         elif request.method=="PUT":
@@ -192,7 +204,7 @@ class UserViewSet(viewsets.GenericViewSet):
             profilecities=profilecity.filter(profile=profile)
             for i in profilecities:
                 city=i.city
-                body["city"].append({"city_name":city.name, "city_location":city.location}) 
+                body["city"].append({"city_id":city.id, "city_name":city.name, "city_location":city.location}) 
             return Response(body, status.HTTP_200_OK)
         
         elif request.method=="DEL":
@@ -203,6 +215,15 @@ class UserViewSet(viewsets.GenericViewSet):
             profilecities=profilecity.filter(profile=profile)
             for i in profilecities:
                 city=i.city
-                body["city"].append({"city_name":city.name, "city_location":city.location}) 
+                body["city"].append({"city_id":city.id, "city_name":city.name, "city_location":city.location}) 
             return Response(body, status.HTTP_200_OK)
+
+        elif request.method=="GET":
+            cities=City.objects.filter()
+            body=[]
+            for city in cities:
+                instance={"city_id": city.id, "city_name":city.name, "city_location":city.location}
+                body.append(instance)
+            
+            return Response({"data":body})
 

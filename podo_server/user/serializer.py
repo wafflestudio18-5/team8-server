@@ -6,25 +6,11 @@ from podo_app.models import Profile
 
 class UserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False)
-    last_login = serializers.DateTimeField(read_only=True)
-    date_joined = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = User
         fields = (
-            'id',
-            'first_name'
-        )
-
-class ProfileSerializer(serializers.ModelSerializer):
-    nickname = serializers.CharField(required=False)
-    image = serializers.DateTimeField(read_only=True)
-
-    class Meta:
-        model = Profile
-        fields = (
-            'nickname',
-            'image',
+            'first_name',
         )
 
 class UserAndProfileSerializer(serializers.ModelSerializer):
@@ -32,6 +18,8 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(required=False)
     nickname = serializers.CharField(required=False)
     image=serializers.URLField(required=False, allow_null=True)
+    products_bought=serializers.IntegerField(required=False)    
+    products_sold=serializers.IntegerField(required=False)    
     class Meta:
         model=Profile
         fields=(
@@ -40,10 +28,11 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
             "nickname", 
             "image", 
             "temperature",
+            "products_bought",
+            "products_sold",
 #            "badges",
-#            "Products bought",
-#            "Products sold",
         )
 
+        
 
     

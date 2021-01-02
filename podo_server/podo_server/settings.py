@@ -136,7 +136,7 @@ else :
             'ENGINE': 'django.db.backends.mysql',
             'HOST': '127.0.0.1',
             'PORT': 3306,
-            'NAME': 'podo_db',
+            'NAME': 'podo_dbb',
             'USER': 'waffle-backend',
             'PASSWORD': 'seminar',
         }
