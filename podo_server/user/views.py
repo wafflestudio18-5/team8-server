@@ -33,6 +33,7 @@ class UserViewSet(viewsets.GenericViewSet):
                 social_url
                 )
             token_response=json.loads(token_response.text)
+#            return Response(token_response)
             if token_response==None:
                 return Response({"error":"Oauth has not returned any data"}, status=status.HTTP_404_NOT_FOUND)
             try:
@@ -69,7 +70,7 @@ class UserViewSet(viewsets.GenericViewSet):
                 elif social=="Kakao":
                     full_name=token_response["kakao_account"]["profile"]["nickname"]
             except KeyError:
-                return Response("error":"'full_name' is required", status=status.HTTP_404_NOT_FOUND)
+                return Response({"error":"'full_name' is required"}, status=status.HTTP_404_NOT_FOUND)
             try:
                 if social=="Google":
                     image=token_response["picture"]
