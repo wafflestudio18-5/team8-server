@@ -23,6 +23,9 @@ class UserViewSet(viewsets.GenericViewSet):
         return self.permission_classes
     
     def create(self, request):
+#    
+#    @action(detail=False, methods=['PUT'])
+#    def login(self, request):
         access_token=request.data['access_token']
         social_url=""
         social=request.data['social']
@@ -150,6 +153,9 @@ class UserViewSet(viewsets.GenericViewSet):
         profile=user.profile.get()
         if not user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        profile=user.profile.get()
+
+        profile.nickname        
 
         data=request.data
         try:
