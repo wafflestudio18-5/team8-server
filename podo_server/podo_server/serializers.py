@@ -61,3 +61,16 @@ class AppointmentSerializer(serializers.ModelSerializer):
             'chatroom_id',
             'time'
         )
+
+class SuggestPriceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SuggestPrice
+        fields = (
+            'id',
+            'seller_id',
+            'buyer_id',
+            'product_id',
+            'confirm',
+            'chatroom_id',
+            'suggest_price'
+        )
