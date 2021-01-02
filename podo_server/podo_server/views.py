@@ -83,3 +83,22 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         if ChatRoom.objects.filter(buy_ie=user, product_id=request.data.get('product_id')).exists():
             chatroom.is_active = False
         return Response(self.get_serializer(chatroom).data)
+
+
+    @action(detail=True, methods=['POST', 'GET'])
+    def Message(self, request, pk):
+        chatroom = self.get_object()
+
+        if self.request.method == 'POST':
+            return self._send_message
+        else:
+            return self._petch_message
+
+    def _send_message(self, chatroom):
+        Message.objets.create(chatroom=chatroom, body=self.request.data.get('body'), written_by=self.request.user)
+        return Response(status=status.HTTP_201_CREATED)
+
+    def _petch_message(self, chatroom):
+        messages = Message.objects.all()
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data)
