@@ -33,7 +33,6 @@ class UserViewSet(viewsets.GenericViewSet):
                 social_url
                 )
             token_response=json.loads(token_response.text)
-#            return Response(token_response)
             if token_response==None:
                 return Response({"error":"Oauth has not returned any data"}, status=status.HTTP_404_NOT_FOUND)
             try:
@@ -61,14 +60,9 @@ class UserViewSet(viewsets.GenericViewSet):
         else:
             return Response({"error":"'social' parameter is wrong"}, status=status.HTTP_400_BAD_REQUEST)
 
-        new=False
-        try:
-            user=User.objects.get(username=username)
-        except User.DoesNotExist:
-            new=True
-                
-        
-        if new:
+        is_new=not(User.objects.filter(username=username).exists())
+                        
+        if is_new:
             try:
                 if social=="Google":
                     full_name=token_response["name"]
@@ -90,12 +84,13 @@ class UserViewSet(viewsets.GenericViewSet):
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
-            if image!=None:
+            if bool(image):
                 profile.image=image
 
             profile.save()
             login(request, user)
         else:
+            user=User.objects.get(username=username)
             login(request, user)
             profile=user.profile.get()
             full_name=user.first_name
@@ -105,7 +100,7 @@ class UserViewSet(viewsets.GenericViewSet):
             products_bought=profile.products_bought
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
-        if image!="":
+        if bool(image):
             body["image"]=image        
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
@@ -114,7 +109,7 @@ class UserViewSet(viewsets.GenericViewSet):
         token, created=Token.objects.get_or_create(user=user)
         data["token"]=token.key
 
-        if new:
+        if is_new:
             return Response(data, status=status.HTTP_201_CREATED)
         else:
             return Response(data, status=status.HTTP_200_OK)
@@ -141,7 +136,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
-        if image!="":
+        if bool(image):
             body["image"]=image
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
@@ -159,9 +154,8 @@ class UserViewSet(viewsets.GenericViewSet):
         data=request.data
         try:
             data["full_name"]
-            userserializer=UserSerializer(user, data={"first_name":data["full_name"]}, partial=True)
-            userserializer.is_valid(raise_exception=True)
-            userserializer.save()
+            user.first_name=data["full_name"]
+            user.save()
         except KeyError:
             pass
 
