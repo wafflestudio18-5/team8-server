@@ -47,3 +47,17 @@ class MessageSerializer(serializers.ModelSerializer):
             'body',
             'written_by',
         )
+
+class AppointmentSerializer(serializers.ModelSerializer):
+    time = serializers.TimeField(format='%H:%H', input_formats=['%H:%H'])
+    class Meta:
+        model = Appointment
+        fields = (
+            'id',
+            'seller_id',
+            'buyer_id',
+            'product_id',
+            'confirm',
+            'chatroom_id',
+            'time'
+        )
