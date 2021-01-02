@@ -10,6 +10,10 @@ from ..podo_server.serializers import *
 def ping(request):
     return HttpResponse('pong-dong')
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9658a41... chatroom api
 
 class ProductViewSet(viewsets.GenericViewSet):
     queryset = Product.objects.all()
@@ -52,26 +56,33 @@ class ProductViewSet(viewsets.GenericViewSet):
             products = products.filter(category__icontains=category)
         return Response(self.get_serializer(products, many=True).data)
 
-class LikeProductViewSet(viewsets.GenericViewSet):
-    queryset = LikeProduct.object.all()
-    serializer_class = LikeProductSerializer
+
+class ChatRoomViewSet(viewsets.GenericViewSet):
+    queryset = ChatRoom.object.all()
+    serializer_class = ChatRoomSerializer
     permission_classes = (IsAuthenticated,)
 
     def get_permissions(self):
         return super(ProductViewSet, self).get_permissions()
 
-    def update(self, request):
+    def get_serializer_class(self):
+        return self.serializer_class
 
-        user = request.user     ##create
-        if not user.profile.likeproduct.filter(product_id=request.get('product_id')).exists():
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_excetption=True)
-            likeproduct = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:  ## put
-            like = user.profile.likeproduct.filter(product_id=request.get('product_id'))
-            like.is_active = not like.is_active
-            serializer = self.get_serializer(like)
-            serializer.is_valid(raise_exception=True)
-            likeproduct = serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+    def create(self, request):
+        user = request.user
+
+        if ChatRoom.objects.filter(buy_id=user, product_id=request.data.get('product_id')).exists():  # buyer_id=user?
+            return Response({"error": "You have already chatroom"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        chatroom = serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, pk=None):
+        chatroom = self.get_object()
+        user = request.user
+        if ChatRoom.objects.filter(buy_ie=user, product_id=request.data.get('product_id')).exists():
+            chatroom.is_active = False
+        return Response(self.get_serializer(chatroom).data)

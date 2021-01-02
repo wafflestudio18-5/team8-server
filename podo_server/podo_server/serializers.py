@@ -27,3 +27,13 @@ class LikeProductSerializer(serializers.ModelSerializer):
             'profile_id',
             'product_id',
         )
+
+class ChatRoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatRoom
+        fields = (
+            'id',
+            'product_id',
+            'body',
+            'buyer_id',
+        )
