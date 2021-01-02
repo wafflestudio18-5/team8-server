@@ -54,4 +54,30 @@ class ProductViewSet(viewsets.GenericViewSet):
             products = products.filter(category__icontains=category)
         return Response(self.get_serializer(products, many=True).data)
 
+<<<<<<< HEAD
 >>>>>>> b378f79... product api
+=======
+class LikeProductViewSet(viewsets.GenericViewSet):
+    queryset = LikeProduct.object.all()
+    serializer_class = LikeProductSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_permissions(self):
+        return super(ProductViewSet, self).get_permissions()
+
+    def update(self, request):
+
+        user = request.user     ##create
+        if not user.profile.likeproduct.filter(product_id=request.get('product_id')).exists():
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_excetption=True)
+            likeproduct = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:  ## put
+            like = user.profile.likeproduct.filter(product_id=request.get('product_id'))
+            like.is_active = not like.is_active
+            serializer = self.get_serializer(like)
+            serializer.is_valid(raise_exception=True)
+            likeproduct = serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+>>>>>>> 23409a6... Likeproduct api
