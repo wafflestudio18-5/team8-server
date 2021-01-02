@@ -150,9 +150,6 @@ class UserViewSet(viewsets.GenericViewSet):
         profile=user.profile.get()
         if not user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-        profile=user.profile.get()
-
-        profile.nickname        
 
         data=request.data
         try:
