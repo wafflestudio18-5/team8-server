@@ -26,6 +26,7 @@ class UserViewSet(viewsets.GenericViewSet):
         access_token=request.data['access_token']
         social_url=""
         social=request.data['social']
+
         if social=="Google":
             social_url="https://oauth2.googleapis.com/tokeninfo?id_token={ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)
             token_response = requests.get(
@@ -166,6 +167,9 @@ class UserViewSet(viewsets.GenericViewSet):
         profile=user.profile.get()
         if not user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        profile=user.profile.get()
+
+        profile.nickname        
 
         data=request.data
         try:
