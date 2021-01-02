@@ -16,8 +16,15 @@ Including another URLconf
 from django.contrib import admin
 from podo_server.views import *
 from django.urls import path, include
+from rest_framework.routers import SimpleRouter
 
-from podo_server.views import ping
+
+app_name = 'product'
+
+router = SimpleRouter()
+router.register('product', ProductViewSet, basename='product')
+router.register('chatroom', ChatRoomViewSet, basename='chatroom')
+router.register('likeproduct', LikeProductViewSet, basename='likeproduct')
 
 urlpatterns = [
     path('', ping),

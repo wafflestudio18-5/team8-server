@@ -18,6 +18,8 @@ class ProductSerializer(serializers.ModelSerializer):
             'count_comments',
             'count_views',
         )
+    def validate(self, attrs):
+        return
 
 class LikeProductSerializer(serializers.ModelSerializer):
     class Meta:
