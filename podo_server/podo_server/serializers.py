@@ -18,3 +18,12 @@ class ProductSerializer(serializers.ModelSerializer):
             'count_comments',
             'count_views',
         )
+
+class LikeProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LikeProduct
+        fields = (
+            'id',
+            'profile_id',
+            'product_id',
+        )
