@@ -123,6 +123,8 @@ class UserViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['POST'])
     def logout(self, request):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
         logout(request)
         return Response(status=status.HTTP_200_OK)
 
