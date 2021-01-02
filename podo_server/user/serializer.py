@@ -14,12 +14,13 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
 class UserAndProfileSerializer(serializers.ModelSerializer):
-    user_id=serializers.IntegerField(required=True)
-    full_name = serializers.CharField(required=False)
-    nickname = serializers.CharField(required=False)
+    user_id=serializers.IntegerField()
+    full_name = serializers.CharField()
+    nickname = serializers.CharField()
     image=serializers.URLField(required=False, allow_null=True)
-    products_bought=serializers.IntegerField(required=False)    
-    products_sold=serializers.IntegerField(required=False)    
+    products_bought=serializers.IntegerField()    
+    products_sold=serializers.IntegerField()
+    temperature=serializers.FloatField()
     class Meta:
         model=Profile
         fields=(
@@ -32,7 +33,6 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
             "products_sold",
 #            "badges",
         )
-
         
 
     
