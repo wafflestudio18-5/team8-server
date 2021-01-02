@@ -6,7 +6,6 @@ from podo_app.models import Profile
 
 class UserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False)
-#add this to design
     last_login = serializers.DateTimeField(read_only=True)
     date_joined = serializers.DateTimeField(read_only=True)
 
@@ -14,14 +13,11 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id',
-            'first_name',
-            'last_login',
-            'date_joined',
+            'first_name'
         )
 
 class ProfileSerializer(serializers.ModelSerializer):
     nickname = serializers.CharField(required=False)
-#add this to design
     image = serializers.DateTimeField(read_only=True)
 
     class Meta:
@@ -48,8 +44,6 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
 #            "Products bought",
 #            "Products sold",
         )
-
-#    def 
 
 
     

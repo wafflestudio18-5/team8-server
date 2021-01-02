@@ -23,9 +23,13 @@ class UserViewSet(viewsets.GenericViewSet):
         return self.permission_classes
 
     def create(self, request):
+#    
+#    @action(detail=False, methods=['PUT'])
+#    def login(self, request):
         access_token=request.data['access_token']
         social_url=""
         social=request.data['social']
+
         if social=="Google":
             social_url="https://oauth2.googleapis.com/tokeninfo?id_token={ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)
             token_response = requests.get(
@@ -35,8 +39,6 @@ class UserViewSet(viewsets.GenericViewSet):
             if token_response==None:
                 return Response("Oauth has not returned any data", status=status.HTTP_404_NOT_FOUND)
             username=social+"_"+str(token_response["sub"])
-
-
 
         elif social=="Kakao":
             social_url="https://kapi.kakao.com/v2/user/me"
@@ -51,7 +53,6 @@ class UserViewSet(viewsets.GenericViewSet):
             except KeyError:
                 return Response(token_response)       
             username=social+"_"+str(token_response["id"])
-
 
         new=False
         try:
@@ -141,6 +142,9 @@ class UserViewSet(viewsets.GenericViewSet):
         user = request.user
         if not user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        profile=user.profile.get()
+
+        profile.nickname        
 
         ####more        
         serializer = self.get_serializer(user, data=request.data, partial=True)
