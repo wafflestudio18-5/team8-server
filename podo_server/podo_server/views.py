@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from ..podo_app.models import Product, LikeProduct, ChatRoom, Message
+from ..podo_app.models import *
 from ..podo_server.serializers import *
 
 def ping(request):
@@ -24,7 +24,11 @@ class ProductViewSet(viewsets.GenericViewSet):
         return self.serializer_class
 
     def create(self, request):
-        serializer = self.get_serializer(data=request.data)
+        if not request.data.filter('city').exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        city = City.objects.get_or_create(name=request.data.pop('city'))
+
+        serializer = self.get_serializer(data=request.data, city=city)
         serializer.is_valid(raise_exception=True)
         product = serializer.save()
 
@@ -145,6 +149,9 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
             return self._deny_price
 
     def _suggest_price(self, chatroom):
+        if not chatroom.product.allow_suggest:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
         serializer = SuggestPriceSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         price = serializer.save()
