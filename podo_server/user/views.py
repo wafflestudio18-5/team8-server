@@ -96,25 +96,12 @@ class UserViewSet(viewsets.GenericViewSet):
             full_name=user.first_name
             nickname=profile.nickname
             image=profile.image
-<<<<<<< HEAD
-<<<<<<< HEAD
             products_sold=profile.products_sold
             products_bought=profile.products_bought
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
         if bool(image):
             body["image"]=image        
-=======
-        body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
-        if image!="":
-            body["image"]=image
->>>>>>> fix mistake
-=======
-
-        body={"user_id":user.id, "full_name":full_name, "nickname":nickname}
-        if image!="":
-            body["image"]=image        
->>>>>>> Update views.py
         serializer=self.get_serializer(data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
@@ -122,11 +109,7 @@ class UserViewSet(viewsets.GenericViewSet):
         token, created=Token.objects.get_or_create(user=user)
         data["token"]=token.key
 
-<<<<<<< HEAD
         if is_new:
-=======
-        if new:
->>>>>>> Update views.py
             return Response(data, status=status.HTTP_201_CREATED)
         else:
             return Response(data, status=status.HTTP_200_OK)
@@ -167,9 +150,6 @@ class UserViewSet(viewsets.GenericViewSet):
         profile=user.profile.get()
         if not user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-        profile=user.profile.get()
-
-        profile.nickname        
 
         data=request.data
         try:
