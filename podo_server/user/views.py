@@ -225,5 +225,5 @@ class UserViewSet(viewsets.GenericViewSet):
                 instance={"city_id": city.id, "city_name":city.name, "city_location":city.location}
                 body.append(instance)
             
-            return Response({"data":body})
+            return Response({"data":body}, status=status.HTTP_200_OK)
 
