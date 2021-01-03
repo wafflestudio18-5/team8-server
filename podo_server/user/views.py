@@ -188,18 +188,17 @@ class UserViewSet(viewsets.GenericViewSet):
         user=request.user
         profile=user.profile.get()
 
-        elif request.method=="PUT":
+        if request.method=="PUT":
             former_profilecities=ProfileCity.objects.filter(profile=profile)
             for i in former_profilecities:
                 i.delete()
 
             city_id=[request.data["city_id_1"], request.data["city_id_2"]]
-
             body=[]
             for id in city_id:
-                if id==0:
+                if id=="0":
                     pass
-                else:
+                else:   
                     try:
                         city=City.objects.get(id=id)
                     except City.DoesNotExist:
