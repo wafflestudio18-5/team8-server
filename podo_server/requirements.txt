@@ -14,3 +14,5 @@ python-dotenv==0.14.0
 mysqlclient==2.0.1
 gunicorn
 psycopg2
+django_storages
+boto3
