@@ -1,5 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User
+import os
+
+def profileImagePath(instance, filename):
+  ext = filename.split('.')[-1]
+  filename =  '{}.{}'.format(instance.pk, ext)
+  return os.path.join('profile', filename)
+
+def productImagePath(instance, filename):
+  ext = filename.split('.')[-1]
+  filename =  '{}.{}'.format(instance.pk, ext)
+  return os.path.join('product', filename)
 
 class TimeModel(models.Model):
   created_at = models.DateTimeField(auto_now_add=True)
@@ -11,7 +22,7 @@ class Profile(TimeModel):
   user = models.ForeignKey(User, related_name='profile',on_delete=models.CASCADE)
   nickname = models.CharField(max_length=100)
   temperature = models.FloatField(default=36.5)
-  image = models.URLField()
+  image = models.ImageField(upload_to=profileImagePath)
   products_sold= models.IntegerField(default=0)
   products_bought= models.IntegerField(default=0)
 
@@ -42,7 +53,7 @@ class Product(TimeModel):
 
 class ProductImage(TimeModel):
   product = models.ForeignKey(Product, related_name='images',on_delete=models.CASCADE)
-  image = models.URLField()
+  image = models.ImageField(upload_to=productImagePath)
 
 class LikeProduct(TimeModel):
   profile = models.ForeignKey(Profile, related_name='like_products',on_delete=models.SET_NULL, null=True)

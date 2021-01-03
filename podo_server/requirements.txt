@@ -16,3 +16,4 @@ gunicorn
 psycopg2
 django_storages
 boto3
+Pillow
