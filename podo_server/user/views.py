@@ -227,3 +227,12 @@ class UserViewSet(viewsets.GenericViewSet):
             
             return Response({"city":body}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=[ 'GET'])
+    def product(self, request, pk=None, pk2=None):
+        if pk==None:
+            return Response("a")
+        else:
+            return Response("b")
+
+
+#
