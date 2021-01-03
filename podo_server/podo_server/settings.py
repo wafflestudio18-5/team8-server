@@ -164,6 +164,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # AWS
+AWS_REGION = 'ap-northeast-2'
 ## AWS Access
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", cast=str, default="")
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", cast=str, default="")
@@ -173,6 +174,7 @@ DEFAULT_FILE_STORAGE = 'podo_server.storages.MediaStorage'
 STATICFILES_STORAGE = 'podo_server.storages.StaticStorage'
 MEDIAFILES_LOCATION = 'media'
 STATICFILES_LOCATION = 'static'
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME,AWS_REGION)
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
