@@ -2,29 +2,87 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from podo_app.models import Profile, ProfileCity, City
+from podo_app.models import Profile, ProfileCity, City, Product
 import requests
 import json
+import responses
 
+Kakao_response_good={
+        "id": 1574749689,
+        "connected_at": "2020-12-26T09:26:07Z",
+        "properties": {
+            "nickname": "임종원",
+            "profile_image": "kalaklakl",
+            "thumbnail_image": "http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg"
+        },
+        "kakao_account": {
+            "profile_needs_agreement": False,
+            "profile": {
+                "nickname": "임종원",
+                "thumbnail_image_url": "http://k.kakaocdn.net/dn/boreK1/btqSaUGPrly/STWzMEuUCPCLlphLZhxr51/img_110x110.jpg",
+                "profile_image_url": "http://k.kakaocdn.net/dn/boreK1/btqSaUGPrly/STWzMEuUCPCLlphLZhxr51/img_640x640.jpg"
+            }
+        }
+    }
+Kakao_response_bad={
+        "error": "this access token does not exist"
+    }
 
-"""
+Google_response_good={
+        "iss": "https://accounts.google.com",
+        "azp": "407408718192.apps.googleusercontent.com",
+        "aud": "407408718192.apps.googleusercontent.com",
+        "sub": "110134255854457775065",
+        "at_hash": "R004kD_6LAaV5ssaABo9fg",
+        "name": "­임종원",
+        "picture": "https://lh4.googleusercontent.com/-3QWIsZqGtxU/AAAAAAAAAAI/AAAAAAAAAAA/AMZuucmVmRZeQWyesmpMuYOo0qop0a3pzA/s96-c/photo.jpg",
+        "given_name": "임종원",
+        "family_name": "­",
+        "locale": "ko",
+        "iat": "1609646968",
+        "exp": "1609650568",
+        "alg": "RS256",
+        "kid": "26129ba543c56e9fbd53dfdcb7789f8bf8f1a1a1",
+        "typ": "JWT"
+        }    
+
+Google_response_bad={
+        "error": "invalid_token",
+        "error_description": "Invalid Value"
+    }        
+
 class PostUserTestCase(TestCase):
     client = Client()
-    def setUp(self):
-        params={"grant_type": "refresh_token", "client_id":, "refresh_token": }###to add
-        response=requests.post("https://kauth.kakao.com/oauth/token", params=params)
-        response=json.loads(response.text)
-        try:
-            access_token=response["access_token"]
-        except KeyError:
-            access_token=None
-        self. assertIsNotNone(access_token)
-        
+    @responses.activate
+    def test_post_user_create_user(self):
+        responses.add(
+            responses.GET, 
+            "https://oauth2.googleapis.com/tokeninfo?id_token=good_response", 
+            json=Google_response_good
+        )
+        responses.add(
+            responses.GET, 
+            "https://oauth2.googleapis.com/tokeninfo?id_token=bad_response", 
+            json=Google_response_bad
+        )
+        responses.add(
+            responses.GET, 
+            "https://kapi.kakao.com/v2/user/me",
+            headers= {"Authorization": "Bearer good_response"},
+            json=Kakao_response_good
+        )
+        responses.add(
+            responses.GET, 
+            "https://kapi.kakao.com/v2/user/me",
+            headers= {"Authorization": "Bearer bad_response"},##
+            json=Kakao_response_bad
+        )
+
         response=self.client.post(
             '/api/v1/user/',
             json.dumps({
-                "access_token": access_token, 
-                "social": "Kakao",
+                "access_token":"good_response",
+                "social":"Kakao",
             }),
             content_type='application/json'
         )
@@ -34,29 +92,28 @@ class PostUserTestCase(TestCase):
         profile_count= Profile.objects.count()
         self.assertEqual(user_count, 1)
         self.assertEqual(profile_count, 1)
-        
+#specifications
+        data = response.json()
+        self.assertIn("id", data)
+        self.assertEqual(data["full_name"], "임종원")
+        self.assertEqual(data["nickname"], "임종원")
+        self.assertEqual(data["image"], "http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        self.assertEqual(data["temperature"], 36.5)
+        self.assertEqual(data["products_bought"], 0)
+        self.assertEqual(data["products_sold"], 0)
+        self.assertIn("token", data)
+        realobject=User.objects.filter(id=data["id"], first_name=data["full_name"])
+        self.assertTrue(realobject)
+        self.assertEqual(realobject[0].username, "Kakao_1574749689")
+        realobject2=Profile.objects.filter(user=realobject[0], nickname=data["nickname"], temperature=data["temperature"], products_bought=data["products_bought"], products_sold=data["products_sold"])
+        self.assertTrue(realobject2)
 
-    def test_post_user_duplicated_username(self):
 
-    def test_post_user_incomplete_request(self):
-
-    def test_post_user_wrong_year(self):
-
-    def test_post_user(self):
-        params2={"grant_type": "refresh_token", "client_id":, "refresh_token": }###to add
-        response2=requests.post("https://kauth.kakao.com/oauth/token", params=params2)
-        response2=json.loads(response.text)
-        try:
-            access_token2=response2["access_token"]
-        except KeyError:
-            access_token2=None
-        self. assertIsNotNone(access_token2)
-        
-        response=self.client.post(
+        response2=self.client.post(
             '/api/v1/user/',
             json.dumps({
-                "access_token": access_token2, 
-                "social": "Kakao",
+                "access_token":"good_response",
+                "social":"Google"
             }),
             content_type='application/json'
         )
@@ -66,788 +123,640 @@ class PostUserTestCase(TestCase):
         profile_count= Profile.objects.count()
         self.assertEqual(user_count, 2)
         self.assertEqual(profile_count, 2)
-##
-        #default(participant)
-        response = self.client.post(
-            '/api/v1/user/',
-            json.dumps({
-                "username": "participant",
-                "password": "password",
-                "first_name": "Davin",
-                "last_name": "Byeon",
-                "email": "bdv111@snu.ac.kr",
-                "role": "participant",
-                "university": "서울대학교",
-                "accepted":"False"
-            }),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+##specifications
 
-        #when university and accepted data is not given
-        response2 = self.client.post(
-            '/api/v1/user/',
-            json.dumps({
-                "username": "participantnodata",
-                "password": "password",
-                "first_name": "Davin",
-                "last_name": "Byeon",
-                "email": "bdv111@snu.ac.kr",
-                "role": "participant"
-            }),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        #default(instructor)
-        response3 = self.client.post(
-            '/api/v1/user/',
-            json.dumps({
-                "username": "instructor",
-                "password": "password",
-                "first_name": "Bavin",
-                "last_name": "Dyeon",
-                "email": "bdv222@snu.ac.kr",
-                "role": "instructor",
-                "company": "Google", 
-                "year":"11"
-            }),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        #when company and year data is not given 
-        response4 = self.client.post(
-            '/api/v1/user/',
-            json.dumps({
-                "username": "instructornodata",
-                "password": "password",
-                "first_name": "Davin",
-                "last_name": "Byeon",
-                "email": "bdv111@snu.ac.kr",
-                "role": "instructor",
-            }),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        data = response.json()
+        data = response2.json()
         self.assertIn("id", data)
-        self.assertEqual(data["username"], "participant")
-        self.assertEqual(data["email"], "bdv111@snu.ac.kr")
-        self.assertEqual(data["first_name"], "Davin")
-        self.assertEqual(data["last_name"], "Byeon")
-        self.assertIn("last_login", data)
-        self.assertIn("date_joined", data)
+        self.assertEqual(data["full_name"], "­임종원")
+        self.assertEqual(data["nickname"], "­임종원")
+        self.assertEqual(data["image"], "https://lh4.googleusercontent.com/-3QWIsZqGtxU/AAAAAAAAAAI/AAAAAAAAAAA/AMZuucmVmRZeQWyesmpMuYOo0qop0a3pzA/s96-c/photo.jpg")
+        self.assertEqual(data["temperature"], 36.5)
+        self.assertEqual(data["products_bought"], 0)
+        self.assertEqual(data["products_sold"], 0)
         self.assertIn("token", data)
-        participant = data["participant"]
-        self.assertIsNotNone(participant)
-        self.assertIn("id", participant)
-        self.assertEqual(participant["university"], "서울대학교")
-        self.assertFalse(participant["accepted"])
-        self.assertEqual(len(participant["seminars"]), 0)
-        self.assertEqual(data["instructor"], None)
-        realobject=User.objects.filter(username="participant", email="bdv111@snu.ac.kr", first_name="Davin", 
-            last_name="Byeon")
+        realobject=User.objects.filter(id=data["id"], first_name=data["full_name"])
         self.assertTrue(realobject)
-        realobject2=ParticipantProfile.objects.filter(user=realobject[0], university="서울대학교", accepted=False)
-        self.assertTrue(realobject2)
-        
-
-        insufficientdata=response2.json()
-        participant2=insufficientdata["participant"]
-        self.assertEqual(participant2["university"], "")
-        self.assertTrue(participant2["accepted"])
-        realobject=User.objects.filter(username="participantnodata", email="bdv111@snu.ac.kr", first_name="Davin", 
-            last_name="Byeon")
-        self.assertTrue(realobject)
-        realobject2=ParticipantProfile.objects.filter(user=realobject[0], university="", accepted=True)
+        self.assertEqual(realobject[0].username, "Google_110134255854457775065")
+        realobject2=Profile.objects.filter(user=realobject[0], nickname=data["nickname"], temperature=data["temperature"], products_bought=data["products_bought"], products_sold=data["products_sold"])
         self.assertTrue(realobject2)
 
-        data2 = response3.json()
-        self.assertIn("id", data2)
-        self.assertEqual(data2["username"], "instructor")
-        self.assertEqual(data2["email"], "bdv222@snu.ac.kr")
-        self.assertEqual(data2["first_name"], "Bavin")
-        self.assertEqual(data2["last_name"], "Dyeon")
-        self.assertIn("last_login", data2)
-        self.assertIn("date_joined", data2)
-        self.assertIn("token", data2)
-        instructor = data2["instructor"]
-        self.assertIsNotNone(instructor)
-        self.assertIn("id", instructor)
-        self.assertEqual(instructor["company"], "Google")
-        self.assertEqual(instructor["year"], 11)
-        self.assertIsNone(instructor["charge"])
-        self.assertIsNone(data2["participant"])
-        realobject=User.objects.filter(username="instructor", email="bdv222@snu.ac.kr", first_name="Bavin", 
-            last_name="Dyeon")
-        self.assertTrue(realobject)
-        realobject2=InstructorProfile.objects.filter(user=realobject[0], company="Google", year=11)
-        self.assertTrue(realobject2)
+##error responses
+        response3=self.client.post(
+            '/api/v1/user/',
+            json.dumps({
+                "access_token":"bad_response",
+                "social":"Kakao"
+            }),
+            content_type='application/json'
+        )
 
-        insufficientdata2=response4.json()
-        instructor2=insufficientdata2["instructor"]
-        self.assertEqual(instructor2["company"], "")
-        self.assertIsNone(instructor2["year"])
-        realobject=User.objects.filter(username="instructornodata", email="bdv111@snu.ac.kr", first_name="Davin", 
-            last_name="Byeon")
-        self.assertTrue(realobject)
-        realobject2=InstructorProfile.objects.filter(user=realobject[0], company="", year=None)
-        self.assertTrue(realobject2)
-
+        self.assertEqual(response3.status_code, status.HTTP_400_BAD_REQUEST)
         user_count = User.objects.count()
-        self.assertEqual(user_count, 5)
-        participant_count = ParticipantProfile.objects.count()
-        self.assertEqual(participant_count, 3)
-        instructor_count = InstructorProfile.objects.count()
-        self.assertEqual(instructor_count, 2)
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 2)
+        self.assertEqual(profile_count, 2)
 
-class PutUserLoginTestCase(TestCase):
-    client=Client()
-    def setUp(self):
-        self.client.post(
+        data=response3.json()
+        self.assertIn("error", data)
+
+        response4=self.client.post(
             '/api/v1/user/',
             json.dumps({
-                "username": "user1",
-                "password": "password",
-                "first_name": "Davin",
-                "last_name": "Byeon",
-                "email": "bdv111@snu.ac.kr",
-                "role": "participant",
-                "university": "서울대학교"
+                "access_token":"bad_response",
+                "social":"Google",
             }),
             content_type='application/json'
         )
 
-    def test_login_user(self):
-        response=self.client.put(
-            '/api/v1/user/login/', 
-            json.dumps({
-                "username":"user1",
-                "password":"password"
-            }), 
-            content_type='application/json'
+        self.assertEqual(response4.status_code, status.HTTP_400_BAD_REQUEST)
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 2)
+        self.assertEqual(profile_count, 2)        
+
+        data=response4.json()
+        self.assertIn("error", data)
+
+    @responses.activate
+    def test_post_user_social_login(self):
+        responses.add(
+            responses.GET, 
+            "https://oauth2.googleapis.com/tokeninfo?id_token=good_response", 
+            json=Google_response_good
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        responses.add(
+            responses.GET, 
+            "https://kapi.kakao.com/v2/user/me",
+            headers= {"Authorization": "Bearer good_response"},
+            json=Kakao_response_good
+        )
 
-        data =  response.json()
-        self.assertIn("id", data)
-        self.assertEqual(data["username"], "user1")
-        self.assertEqual(data["email"], "bdv111@snu.ac.kr")
-        self.assertEqual(data["first_name"], "Davin")
-        self.assertEqual(data["last_name"], "Byeon")
-        self.assertIn("last_login", data)
-        self.assertIn("date_joined", data)
-        self.assertIn("token", data)
+        #create an account, and POST /user/ with the same username(Google)
+        user=User.objects.create(first_name="임종원", username="Google_110134255854457775065")
+        Profile.objects.create(user=user, nickname="임종원nickname", image="http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 1)
+        self.assertEqual(profile_count, 1)
 
-        participant = data["participant"]
-        self.assertIsNotNone(participant)
-        self.assertIn("id", participant)
-        self.assertEqual(participant["university"], "서울대학교")
-        self.assertTrue(participant["accepted"])
-        self.assertEqual(len(participant["seminars"]), 0)
-        self.assertIsNone(data["instructor"])
-
-        realobject=User.objects.filter(username="user1", email="bdv111@snu.ac.kr", first_name="Davin", 
-            last_name="Byeon")
-        self.assertTrue(realobject)
-        realobject2=ParticipantProfile.objects.filter(user=realobject[0], university="서울대학교", accepted=True)
-        self.assertTrue(realobject2)
-        
-class GetUserTestCase(TestCase):
-    client=Client()
-
-    def setUp(self):
         response=self.client.post(
             '/api/v1/user/',
             json.dumps({
-                "username": "user1",
-                "password": "password",
-                "first_name": "Davin",
-                "last_name": "Byeon",
-                "email": "bdv111@snu.ac.kr",
-                "role": "participant",
-                "university": "서울대학교"
+                "access_token":"good_response",
+                "social":"Google",
             }),
             content_type='application/json'
         )
-        self.participant_token = 'Token ' + Token.objects.get(user__username='user1').key
-        self.userid1=response.json()["id"]
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 1)
+        self.assertEqual(profile_count, 1)
+
+#specifications
+        data = response.json()
+        self.assertIn("id", data)
+        self.assertEqual(data["full_name"], "임종원")
+        self.assertEqual(data["nickname"], "임종원nickname")
+        self.assertEqual(data["image"], "https://podo-bucket.s3.ap-northeast-2.amazonaws.com/media/http%3A/k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        self.assertEqual(data["temperature"], 36.5)
+        self.assertEqual(data["products_bought"], 0)
+        self.assertEqual(data["products_sold"], 0)
+        self.assertIn("token", data)
+        realobject=User.objects.filter(id=data["id"], first_name=data["full_name"])
+        self.assertTrue(realobject)
+        self.assertEqual(realobject[0].username, "Google_110134255854457775065")
+        realobject2=Profile.objects.filter(user=realobject[0], nickname=data["nickname"], temperature=data["temperature"], products_bought=data["products_bought"], products_sold=data["products_sold"])
+        self.assertTrue(realobject2)
+
+
+        #create an account, and POST /user/ with the same username(Kakao)
+        user=User.objects.create(first_name="임종원2", username="Kakao_1574749689")
+        Profile.objects.create(user=user, nickname="임종원2nickname", image="http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_640x640.jpg")
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 2)
+        self.assertEqual(profile_count, 2)
 
         response2=self.client.post(
             '/api/v1/user/',
             json.dumps({
-                "username": "user2",
-                "password": "password",
-                "first_name": "Obama",
-                "last_name": "Trump",
-                "email": "random123@snu.ac.kr",
-                "role": "instructor",
-                "company": "Google",
-                "year": "2"
+                "access_token":"",
+                "social":"Kakao"
             }),
             content_type='application/json'
-                )
-        self.instructor_token = 'Token ' + Token.objects.get(user__username='user2').key
-        self.userid2=response2.json()["id"]
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 2)
+        self.assertEqual(profile_count, 2)
+
+#specifications
+        data = response2.json()
+        self.assertIn("id", data)
+        self.assertEqual(data["full_name"], "임종원2")
+        self.assertEqual(data["nickname"], "임종원2nickname")
+        self.assertEqual(data["image"], "https://podo-bucket.s3.ap-northeast-2.amazonaws.com/media/http%3A/k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_640x640.jpg")
+        self.assertEqual(data["temperature"], 36.5)
+        self.assertEqual(data["products_bought"], 0)
+        self.assertEqual(data["products_sold"], 0)
+        self.assertIn("token", data)
+        realobject=User.objects.filter(id=data["id"], first_name=data["full_name"])
+        self.assertTrue(realobject)
+        self.assertEqual(realobject[0].username, "Kakao_1574749689")
+        realobject2=Profile.objects.filter(user=realobject[0], nickname=data["nickname"], temperature=data["temperature"], products_bought=data["products_bought"], products_sold=data["products_sold"])
+        self.assertTrue(realobject2)
+
+    @responses.activate
+    def test_post_user_no_token_response(self):
+        responses.add(
+            responses.GET, 
+            "https://oauth2.googleapis.com/tokeninfo?id_token=no_response", 
+            json=""
+        )
+        responses.add(
+            responses.GET, 
+            "https://kapi.kakao.com/v2/user/me",
+            headers= {"Authorization": "Bearer no_response"},
+            json=""
+        )
+        #when token response is None
+        response=self.client.post(
+            '/api/v1/user/',
+            json.dumps({
+                "access_token":"no_response",
+                "social":"Kakao"
+            }),
+            content_type='application/json')
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 0)
+        self.assertEqual(profile_count, 0)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+            
+        data=response.json()
+        self.assertEqual(data["error"], "Oauth has not returned any data")
+
+        response2=self.client.post(
+            '/api/v1/user/',
+            json.dumps({
+                "access_token":"no_response",
+                "social":"Google"
+            }),
+            content_type='application/json')
+
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 0)
+        self.assertEqual(profile_count, 0)
+        self.assertEqual(response2.status_code, status.HTTP_404_NOT_FOUND)
+            
+        data=response2.json()
+        self.assertEqual(data["error"], "Oauth has not returned any data")
+
+    def test_post_user_wrong_social_parameter(self):
+        response=self.client.post(
+            '/api/v1/user/',
+            json.dumps({
+                "access_token":"",
+                "social":"Github",
+            }),
+            content_type='application/json')
+
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 0)
+        self.assertEqual(profile_count, 0)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            
+        data=response.json()
+        self.assertEqual(data["error"], "'social' parameter is wrong")        
+
+    @responses.activate
+    def test_post_user_no_name_given(self):
+        Kakao_response_noname={
+                "id": 1574749689,
+                "connected_at": "2020-12-26T09:26:07Z",
+                "properties": {
+                    "profile_image": "http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_640x640.jpg",
+                    "thumbnail_image": "http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg"
+                },
+                "kakao_account": {
+                    "profile_needs_agreement": False,
+                    "profile": {
+                        "thumbnail_image_url": "http://k.kakaocdn.net/dn/boreK1/btqSaUGPrly/STWzMEuUCPCLlphLZhxr51/img_110x110.jpg",
+                        "profile_image_url": "http://k.kakaocdn.net/dn/boreK1/btqSaUGPrly/STWzMEuUCPCLlphLZhxr51/img_640x640.jpg"
+                    }
+                }
+            }
+        Google_response_noname={
+                "iss": "https://accounts.google.com",
+                "azp": "407408718192.apps.googleusercontent.com",
+                "aud": "407408718192.apps.googleusercontent.com",
+                "sub": "110134255854457775065",
+                "at_hash": "R004kD_6LAaV5ssaABo9fg",
+                "picture": "https://lh4.googleusercontent.com/-3QWIsZqGtxU/AAAAAAAAAAI/AAAAAAAAAAA/AMZuucmVmRZeQWyesmpMuYOo0qop0a3pzA/s96-c/photo.jpg",
+                "family_name": "­",
+                "locale": "ko",
+                "iat": "1609646968",
+                "exp": "1609650568",
+                "alg": "RS256",
+                "kid": "26129ba543c56e9fbd53dfdcb7789f8bf8f1a1a1",
+                "typ": "JWT"
+                }
+
+        responses.add(
+            responses.GET, 
+            "https://oauth2.googleapis.com/tokeninfo?id_token=no_name", 
+            json=Google_response_noname
+        )
+        responses.add(
+            responses.GET, 
+            "https://kapi.kakao.com/v2/user/me",
+            headers= {"Authorization": "Bearer no_name"},
+            json=Kakao_response_noname
+        )
+
+
+        response=self.client.post(
+            '/api/v1/user/',
+            json.dumps({
+                "access_token":"no_name",
+                "social":"Kakao"
+            }),
+            content_type='application/json')
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 0)
+        self.assertEqual(profile_count, 0)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+            
+        data=response.json()
+        self.assertEqual(data["error"], "'full_name' is required")        
+
+        response2=self.client.post(
+            '/api/v1/user/',
+            json.dumps({
+                "access_token":"no_name",
+                "social":"Google"
+            }),
+            content_type='application/json')
+        user_count = User.objects.count()
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 0)
+        self.assertEqual(profile_count, 0)
+        self.assertEqual(response2.status_code, status.HTTP_404_NOT_FOUND)
+            
+        data=response2.json()
+        self.assertEqual(data["error"], "'full_name' is required")        
+
+class GetUserTestCase(TestCase):
+    client = Client()
+    def setUp(self):
+        user=User.objects.create(first_name="임종원", username="Google_110134255854457775065")
+        Profile.objects.create(user=user, nickname="임종원nickname", image="http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        self.token, created=Token.objects.get_or_create(user=user)
 
     def test_get_user(self):
         response=self.client.get(
-            '/api/v1/user/{a}/'.format(a=self.userid1), 
-            HTTP_AUTHORIZATION=self.instructor_token
-                    )
+            '/api/v1/user/me/',
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response2=self.client.get(
-            '/api/v1/user/{b}/'.format(b=self.userid2), 
-            HTTP_AUTHORIZATION=self.participant_token            
-        )
-        self.assertEqual(response2.status_code, status.HTTP_200_OK)
-
-        data =  response.json()
+        data = response.json()
         self.assertIn("id", data)
-        self.assertEqual(data["username"], "user1")
-        self.assertEqual(data["email"], "bdv111@snu.ac.kr")
-        self.assertEqual(data["first_name"], "Davin")
-        self.assertEqual(data["last_name"], "Byeon")
-        self.assertIn("last_login", data)
-        self.assertIn("date_joined", data)
-        self.assertNotIn("token", data)
-
-        participant = data["participant"]
-        self.assertIsNotNone(participant)
-        self.assertIn("id", participant)
-        self.assertEqual(participant["university"], "서울대학교")
-        self.assertTrue(participant["accepted"])
-        self.assertEqual(len(participant["seminars"]), 0)
-        self.assertIsNone(data["instructor"])
-
-        data2 =  response2.json()
-        self.assertIn("id", data)
-        self.assertEqual(data2["username"], "user2")
-        self.assertEqual(data2["email"], "random123@snu.ac.kr")
-        self.assertEqual(data2["first_name"], "Obama")
-        self.assertEqual(data2["last_name"], "Trump")
-        self.assertIn("last_login", data2)
-        self.assertIn("date_joined", data2)
-        self.assertNotIn("token", data2)
-
-        instructor = data2["instructor"]
-        self.assertIsNotNone(instructor)
-        self.assertIn("id", instructor)
-        self.assertEqual(instructor["company"], "Google")
-        self.assertEqual(instructor["year"], 2)
-        self.assertEqual((instructor["charge"]), None)
-        self.assertIsNone(data2["participant"])
-
-    def test_get_user_me(self):
-        #same as the above function, except for the fact that the 
-        #ip given is "me"
+        self.assertEqual(data["full_name"], "임종원")
+        self.assertEqual(data["nickname"], "임종원nickname")
+        self.assertEqual(data["image"], "https://podo-bucket.s3.ap-northeast-2.amazonaws.com/media/http%3A/k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        self.assertEqual(data["temperature"], 36.5)
+        self.assertEqual(data["products_bought"], 0)
+        self.assertEqual(data["products_sold"], 0)
+        realobject=User.objects.filter(id=data["id"], first_name=data["full_name"])
+        self.assertTrue(realobject)
+        self.assertEqual(realobject[0].username, "Google_110134255854457775065")
+        realobject2=Profile.objects.filter(user=realobject[0], nickname=data["nickname"], temperature=data["temperature"], products_bought=data["products_bought"], products_sold=data["products_sold"])
+        self.assertTrue(realobject2)
+        
+    def test_get_user_unauthorized(self):
         response=self.client.get(
-            '/api/v1/user/me/', 
-            HTTP_AUTHORIZATION=self.participant_token
-                    )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        response2=self.client.get(
-            '/api/v1/user/me/', 
-            HTTP_AUTHORIZATION=self.instructor_token            
-        )
-        self.assertEqual(response2.status_code, status.HTTP_200_OK)
-
-
-        data =  response.json()
-        self.assertIn("id", data)
-        self.assertEqual(data["username"], "user1")
-        self.assertEqual(data["email"], "bdv111@snu.ac.kr")
-        self.assertEqual(data["first_name"], "Davin")
-        self.assertEqual(data["last_name"], "Byeon")
-        self.assertIn("last_login", data)
-        self.assertIn("date_joined", data)
-        self.assertNotIn("token", data)
-
-        participant = data["participant"]
-        self.assertIsNotNone(participant)
-        self.assertIn("id", participant)
-        self.assertEqual(participant["university"], "서울대학교")
-        self.assertTrue(participant["accepted"])
-        self.assertEqual(len(participant["seminars"]), 0)
-        #when there is seminar
-        self.assertIsNone(data["instructor"])
-
-
-        data2 =  response2.json()
-        self.assertIn("id", data)
-        self.assertEqual(data2["username"], "user2")
-        self.assertEqual(data2["email"], "random123@snu.ac.kr")
-        self.assertEqual(data2["first_name"], "Obama")
-        self.assertEqual(data2["last_name"], "Trump")
-        self.assertIn("last_login", data2)
-        self.assertIn("date_joined", data2)
-        self.assertNotIn("token", data2)
-
-        instructor = data2["instructor"]
-        self.assertIsNotNone(instructor)
-        self.assertIn("id", instructor)
-        self.assertEqual(instructor["company"], "Google")
-        self.assertEqual(instructor["year"], 2)
-        self.assertEqual((instructor["charge"]), None)
-        self.assertIsNone(data2["participant"])
-
+            '/api/v1/user/',
+            content_type='application/json')
+        
 class PutUserTestCase(TestCase):
     client = Client()
-
     def setUp(self):
-        self.client.post(
-            '/api/v1/user/',
-            json.dumps({
-                "username": "part",
-                "password": "password",
-                "first_name": "Davin",
-                "last_name": "Byeon",
-                "email": "bdv111@snu.ac.kr",
-                "role": "participant",
-                "university": "서울대학교"
-            }),
-            content_type='application/json'
-        )
-        self.participant_token = 'Token ' + Token.objects.get(user__username='part').key
-
-        self.client.post(
-            '/api/v1/user/',
-            json.dumps({
-                "username": "inst",
-                "password": "password",
-                "first_name": "Davin",
-                "last_name": "Byeon",
-                "email": "bdv111@snu.ac.kr",
-                "role": "instructor",
-                "year": 1
-            }),
-            content_type='application/json'
-        )
-        self.instructor_token = 'Token ' + Token.objects.get(user__username='inst').key
-
-    def test_put_user_wrong_or_incomplete_request(self):
-        #no authorization
-        response = self.client.put(
+        user=User.objects.create(first_name="임종원", username="Google_110134255854457775065")
+        Profile.objects.create(user=user, nickname="임종원nickname", image="http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        self.token, created=Token.objects.get_or_create(user=user)        
+        
+    def test_put_user(self):
+        response=self.client.put(
             '/api/v1/user/me/',
             json.dumps({
-                "first_name": "Dabin"
+                "full_name":"jongwon",
+                "nickname":"Carlos"
             }),
-            content_type='application/json'
-        )
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+        
+        data = response.json()
+        self.assertIn("id", data)
+        self.assertEqual(data["full_name"], "jongwon")
+        self.assertEqual(data["nickname"], "Carlos")
+        self.assertEqual(data["temperature"], 36.5)
+        self.assertEqual(data["products_bought"], 0)
+        self.assertEqual(data["products_sold"], 0)
+        realobject=User.objects.filter(id=data["id"], first_name=data["full_name"])
+        self.assertTrue(realobject)
+        self.assertEqual(realobject[0].username, "Google_110134255854457775065")
+        realobject2=Profile.objects.filter(user=realobject[0], nickname=data["nickname"], temperature=data["temperature"], products_bought=data["products_bought"], products_sold=data["products_sold"])
+        self.assertTrue(realobject2)
+
+    def test_put_user_unauthorized(self):
+        response=self.client.put(
+            '/api/v1/user/me/',
+            json.dumps({
+                "full_name":"jongwon",
+                "nickname":"Carlos",
+                "image":"https://lh4.googleusercontent.com/-3QWIsZqGtxU/AAAAAAAAAAI/AAAAAAAAAAA/AMZuucmVmRZeQWyesmpMuYOo0qop0a3pzA/s96-c/photo.jpg"
+            }),
+            content_type='application/json')
+
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        #existing username
-        response = self.client.put(
-            '/api/v1/user/me/',
+    def test_put_user_wrong_pk(self):
+        response=self.client.put(
+            '/api/v1/user/1/',
             json.dumps({
-                "username": "inst"
+                "full_name":"jongwon",
+                "nickname":"Carlos",
+                "image":"https://lh4.googleusercontent.com/-3QWIsZqGtxU/AAAAAAAAAAI/AAAAAAAAAAA/AMZuucmVmRZeQWyesmpMuYOo0qop0a3pzA/s96-c/photo.jpg"
             }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.participant_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
 
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        data=response.json()
+        self.assertEqual(data["error"], "Can't update other user's information")
 
-        #only first name
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "first_name": "Dabin"
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.participant_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        participant_user = User.objects.get(username='part')
-        self.assertEqual(participant_user.first_name, 'Davin')
-
-        #only last name
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "last_name": "Beon"
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.participant_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        self.assertEqual(participant_user.last_name, 'Byeon')
-
-        #number in first name
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "first_name": "Davin1",
-                "last_name": "Byeon"
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.participant_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        participant_user = User.objects.get(username='part')
-        self.assertEqual(participant_user.first_name, 'Davin')
-
-        #number in  last name
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "first_name": "Davin",
-                "last_name": "Beon1"
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.participant_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        self.assertEqual(participant_user.last_name, 'Byeon')
-
-        #year<0
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "username": "inst123",
-                "email": "bdv111@naver.com",
-                "company": "매스프레소",
-                "year": -1
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.instructor_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        #year=0
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "year": 0
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.instructor_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        instructor_user = User.objects.get(username='inst')
-        self.assertEqual(instructor_user.email, 'bdv111@snu.ac.kr')
-
-
-
-    def test_put_user_me_participant(self):
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "username": "part123",
-                "email": "bdv111@naver.com",
-                "university": "경북대학교"
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.participant_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data = response.json()
-        self.assertIn("id", data)
-        self.assertEqual(data["username"], "part123")
-        self.assertEqual(data["email"], "bdv111@naver.com")
-        self.assertEqual(data["first_name"], "Davin")
-        self.assertEqual(data["last_name"], "Byeon")
-        self.assertIn("last_login", data)
-        self.assertIn("date_joined", data)
-        self.assertNotIn("token", data)
-
-        participant = data["participant"]
-        self.assertIsNotNone(participant)
-        self.assertIn("id", participant)
-        self.assertEqual(participant["university"], "경북대학교")
-        self.assertTrue(participant["accepted"])
-        self.assertEqual(len(participant["seminars"]), 0)
-
-        self.assertIsNone(data["instructor"])
-        participant_user = User.objects.get(username='part123')
-        self.assertEqual(participant_user.email, 'bdv111@naver.com')
-        realobject=User.objects.filter(username="part123", email="bdv111@naver.com", first_name="Davin", 
-            last_name="Byeon")
-        self.assertTrue(realobject)
-        realobject2=ParticipantProfile.objects.filter(user=realobject[0], university="경북대학교", accepted=True)
-        self.assertTrue(realobject2)
-
-        #when university data is not given
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "username": "part456",
-                "email": "bdv111@naver.com",
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.participant_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data = response.json()
-        participant = data["participant"]
-        self.assertEqual(participant["university"], "")
-        realobject=User.objects.filter(username="part456", email="bdv111@naver.com", first_name="Davin", 
-            last_name="Byeon")
-        self.assertTrue(realobject)
-        realobject2=ParticipantProfile.objects.filter(user=realobject[0], university="", accepted=True)
-        self.assertTrue(realobject2)
-
-        #when university is blank
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "university":""
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.participant_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data = response.json()
-        participant = data["participant"]
-        self.assertEqual(participant["university"], "")
-
-
-
-    def test_put_user_me_instructor(self):
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "username": "inst123",
-                "email": "bdv111@naver.com",
-                "first_name": "Dabin",
-                "last_name": "Byeon",
-                "university": "서울대학교",  # this should be ignored
-                "company": "매스프레소",
-                "year": 2
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.instructor_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data = response.json()
-        self.assertIn("id", data)
-        self.assertEqual(data["username"], "inst123")
-        self.assertEqual(data["email"], "bdv111@naver.com")
-        self.assertEqual(data["first_name"], "Dabin")
-        self.assertEqual(data["last_name"], "Byeon")
-        self.assertIn("last_login", data)
-        self.assertIn("date_joined", data)
-        self.assertNotIn("token", data)
-
-        self.assertIsNone(data["participant"])
-        instructor = data["instructor"]
-        self.assertIsNotNone(instructor)
-        self.assertIn("id", instructor)
-        self.assertEqual(instructor["company"], "매스프레소")
-        self.assertEqual(instructor["year"], 2)
-        self.assertIsNone(instructor["charge"])
-
-        instructor_user = User.objects.get(username='inst123')
-        self.assertEqual(instructor_user.email, 'bdv111@naver.com')
-        realobject=User.objects.filter(username="inst123", email="bdv111@naver.com", first_name="Dabin", 
-            last_name="Byeon")
-        self.assertTrue(realobject)
-        realobject2=InstructorProfile.objects.filter(user=realobject[0], 
-            company="매스프레소", year=2)
-        self.assertTrue(realobject2)
-
-
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "username": "inst456",
-                "email": "bdv111@naver.com",
-                "first_name": "Dabin",
-                "last_name": "Byeon",
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.instructor_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data = response.json()
-        instructor = data["instructor"]
-        self.assertEqual(instructor["company"], "")
-        self.assertIsNone(instructor["year"])
-        realobject=User.objects.filter(username="inst456", email="bdv111@naver.com", first_name="Dabin", 
-            last_name="Byeon")
-        self.assertTrue(realobject)
-        realobject2=InstructorProfile.objects.filter(user=realobject[0], 
-            company="", year=None)
-        self.assertTrue(realobject2)
-
-
-        response = self.client.put(
-            '/api/v1/user/me/',
-            json.dumps({
-                "company": "",  # this should be ignored
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.instructor_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data = response.json()
-        instructor = data["instructor"]
-        self.assertEqual(instructor["company"], "")
-
-class PostUserParticipantTestCase(TestCase):
-    client=Client()
-
+class DelUserTestCase(TestCase):
+    client = Client()
     def setUp(self):
-        self.client.post(
-            '/api/v1/user/',
-            json.dumps({
-                "username": "user1",
-                "password": "password",
-                "first_name": "Davin",
-                "last_name": "Byeon",
-                "email": "bdv111@snu.ac.kr",
-                "role": "participant",
-                "university": "서울대학교"
-            }),
-            content_type='application/json'
-        )        
-        self.participant_token = 'Token ' + Token.objects.get(user__username='user1').key
+        user=User.objects.create(first_name="임종원", username="Google_110134255854457775065")
+        Profile.objects.create(user=user, nickname="임종원nickname", image="http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        self.token, created=Token.objects.get_or_create(user=user)
 
-        self.client.post(
-            '/api/v1/user/',
-            json.dumps({
-                "username": "user2",
-                "password": "password",
-                "first_name": "Obama",
-                "last_name": "Trump",
-                "email": "random123@snu.ac.kr",
-                "role": "instructor",
-                "company": "Google",
-                "year": "2"
-            }),
-            content_type='application/json'
-                )
-        self.instructor_token = 'Token ' + Token.objects.get(user__username='user2').key
-
-        self.client.post(
-            '/api/v1/user/',
-            json.dumps({
-                "username": "user3",
-                "password": "password",
-                "first_name": "Obama",
-                "last_name": "Trump",
-                "email": "random123@snu.ac.kr",
-                "role": "instructor",
-                "company": "Google",
-                "year": "2"
-            }),
-            content_type='application/json'
-                )
-        self.instructor_token2 = 'Token ' + Token.objects.get(user__username='user3').key
-
+    def test_del_user(self):
+        response=self.client.delete(
+            '/api/v1/user/me/',
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
 
         user_count = User.objects.count()
-        self.assertEqual(user_count, 3)
-        participant_count = ParticipantProfile.objects.count()
-        self.assertEqual(participant_count, 1)
-        instructor_count = InstructorProfile.objects.count()
-        self.assertEqual(instructor_count, 2)
+        profile_count= Profile.objects.count()
+        self.assertEqual(user_count, 0)
+        self.assertEqual(profile_count, 0)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_del_user_unauthorized(self):
+        response=self.client.delete(
+            '/api/v1/user/me/',
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_post_user_participant_wrong_role(self):
-        response=self.client.post(
-            '/api/v1/user/participant/',
+    def test_del_user_wrong_pk(self):
+        response=self.client.delete(
+            '/api/v1/user/1/',
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        data=response.json()
+        self.assertEqual(data["error"], "Can't update other user's information")
+            
+
+class PutUserCityTestCase(TestCase):
+    client = Client()
+    def setUp(self):
+        user=User.objects.create(first_name="임종원", username="Google_110134255854457775065")
+        profile=Profile.objects.create(user=user, nickname="임종원nickname", image="http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        self.token, created=Token.objects.get_or_create(user=user)
+        cities=City.objects.all().order_by('id')
+
+        ProfileCity.objects.create(profile=profile, city=cities[0])        
+        ProfileCity.objects.create(profile=profile, city=cities[1])        
+
+    def test_put_user_city(self):
+    ##change both
+        response=self.client.put(
+            '/api/v1/user/city/',
             json.dumps({
-                "university":"SNU",
-                "accepted":False,
+                "city_id_1":3,
+                "city_id_2":4,
             }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.participant_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        profilecity_count=ProfileCity.objects.count()
+        self.assertEqual(2, profilecity_count)
 
-    
-    def test_post_user_participant(self):
-
-        response=self.client.post(
-            '/api/v1/user/participant/',
-            json.dumps({
-                "university":"SNU",
-                "accepted":False,
-            }),
-            content_type='application/json',
-            HTTP_AUTHORIZATION=self.instructor_token
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        data =  response.json()
+        data=response.json()
         self.assertIn("id", data)
-        self.assertEqual(data["username"], "user2")
-        self.assertEqual(data["email"], "random123@snu.ac.kr")
-        self.assertEqual(data["first_name"], "Obama")
-        self.assertEqual(data["last_name"], "Trump")
-        self.assertIn("last_login", data)
-        self.assertIn("date_joined", data)
-        self.assertNotIn("token", data)
+        self.assertEqual(data["nickname"], "임종원nickname")
+        self.assertIn("city", data)
 
-        participant = data["participant"]
-        self.assertIsNotNone(participant)
-        self.assertIn("id", participant)
-        self.assertEqual(participant["university"], "SNU")
-        self.assertFalse(participant["accepted"])
-        self.assertEqual(len(participant["seminars"]), 0)
-        #when there is seminar
-
-        instructor = data["instructor"]
-        self.assertIsNotNone(instructor)
-        self.assertIn("id", instructor)
-        self.assertEqual(instructor["company"], "Google")
-        self.assertEqual(instructor["year"], 2)
-        self.assertEqual((instructor["charge"]), None)
+        city=data["city"]
+        self.assertEqual(city[0]["city_id"], 3)
+        self.assertEqual(city[0]["city_name"], "용산구")
+        self.assertEqual(city[1]["city_id"], 4)
+        self.assertEqual(city[1]["city_name"], "성동구")
+#        realobject=ProfileCity.objects().filter(profile=profile)
         
-        user_count = User.objects.count()
-        self.assertEqual(user_count, 3)
-        participant_count = ParticipantProfile.objects.count()
-        self.assertEqual(participant_count, 2)
-        instructor_count = InstructorProfile.objects.count()
-        self.assertEqual(instructor_count, 2)
 
-        #cannot apply again
-        response=self.client.post(
-            '/api/v1/user/participant/',
-            HTTP_AUTHORIZATION=self.instructor_token
-        )
+    ##erase both
+        response2=self.client.put(
+            '/api/v1/user/city/',
+            json.dumps({
+                "city_id_1":0,
+                "city_id_2":0,
+            }),
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        profilecity_count=ProfileCity.objects.count()
+        self.assertEqual(0, profilecity_count)
+
+        data=response2.json()
+        self.assertIn("id", data)
+        self.assertEqual(data["nickname"], "임종원nickname")
+        self.assertIn("city", data)
+        self.assertListEqual(data["city"], [])
+
+    ##create both
+        response3=self.client.put(
+            '/api/v1/user/city/',
+            json.dumps({
+                "city_id_1":5,
+                "city_id_2":6,
+            }),
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+
+        self.assertEqual(response3.status_code, status.HTTP_200_OK)
+        profilecity_count=ProfileCity.objects.count()
+        self.assertEqual(2, profilecity_count)
+
+        data=response3.json()
+        self.assertIn("id", data)
+        self.assertEqual(data["nickname"], "임종원nickname")
+        self.assertIn("city", data)
+
+        city=data["city"]
+        self.assertEqual(city[0]["city_id"], 5)
+        self.assertEqual(city[0]["city_name"], "광진구")
+        self.assertEqual(city[1]["city_id"], 6)
+        self.assertEqual(city[1]["city_name"], "동대문구")
+#        realobject=ProfileCity.objects().filter(profile=profile)
+
+    def test_put_user_city_wrong_parameter(self):
+        response=self.client.put(
+            '/api/v1/user/city/',
+            json.dumps({
+                "city_id_1":44,
+                "city_id_2":1,
+            }),
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        profilecity_count=ProfileCity.objects.count()
+        self.assertEqual(2, profilecity_count)
+
+        data=response.json()
+#actual object check 
+        self.assertEqual(data["error"], "there is no city with the given id")
+       
+    def test_put_user_city_unauthorized(self):
+        response=self.client.put(
+            '/api/v1/user/city/',
+            json.dumps({
+                "city_id_1":3,
+                "city_id_2":4,
+            }),
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class GetUserCityTestCase(TestCase):
+    client = Client()
+    def setUp(self):
+        user=User.objects.create(first_name="임종원", username="Google_110134255854457775065")
+        Profile.objects.create(user=user, nickname="임종원nickname", image="http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        self.token, created=Token.objects.get_or_create(user=user)
+
+    def test_get_user_city(self):
+        response=self.client.get(
+            '/api/v1/user/city/',
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data=response.json()
+        self.assertIn("city", data)        
+        city=data["city"]
+
+        cities=["종로구", "중구", "용산구", "성동구", "광진구", "동대문구", "중랑구", "성북구","강북구", "도봉구", "노원구", "은평구", "서대문구", "마포구", "양천구", 
+        "강서구", "구로구", "금천구", "영등포구", "동작구", "관악구", "서초구", "강남구", "송파구", "강동구"]
+        for i in range(0, 25):
+            self.assertEqual(city[i]["city_name"], cities[i])
+
+    def test_get_user_city_unauthorized(self):
+        response=self.client.get(
+            '/api/v1/user/city/',
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class GetUserProductTestCase(TestCase):
+    client = Client()
+    def setUp(self):
+        user=User.objects.create(first_name="임종원", username="Google_110134255854457775065")
+        profile=Profile.objects.create(user=user, nickname="임종원nickname", image="http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        self.token, created=Token.objects.get_or_create(user=user)
+
+        user2=User.objects.create(first_name="임종원2", username="Kakao_110134255854457775065")
+        profile2=Profile.objects.create(user=user, nickname="임종원nickname2", image="http://k.kakaocdn.net/dn/dfNRfx/btqRt5WG8al/33Qo8aKKPmqpZ4LWdR5jC1/img_110x110.jpg")
+        city=City.objects.get(id=1)
+        for i in range(1, 16):
+            Product.objects.create(seller=profile, name="first_{num}".format(num=i), price=0, allow_suggest=False,  city=city, category="examplecategory", status=1)
+        for i in range(1, 16):
+            Product.objects.create(seller=profile2, name="second_{num}".format(num=i), price=0, allow_suggest=False, city=city, category="examplecategory", status=1)
 
 
-        user_count = User.objects.count()
-        self.assertEqual(user_count, 3)
-        participant_count = ParticipantProfile.objects.count()
-        self.assertEqual(participant_count, 2)
-        instructor_count = InstructorProfile.objects.count()
-        self.assertEqual(instructor_count, 2)
+"""
+    def test_get_user_product(self):
+        response=self.client.get(
+            '/api/v1/user/product/',
+            json.dumps({
+                "page": "1",
+            }),
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        data=response.json()
+        self.assertIn("page")
+        self.assertIn("product")
+        page=data["page"]
+        product=data["product"]
+        self.assertEqual(page["product_count"], 15)
+        self.assertEqual(page["page_count"], 2)
+        self.assertEqual(page["current_page"], 1)
+        self.assertEqual(len(product), 10)
+        for i in range(1, 11):
+            self.assertEqual(product[i]["name"], "first_{num}".format(num=i))
+            
+        response2=self.client.get(
+            '/api/v1/user/product/',
+            json.dumps({
+                "page":"2" 
+            }),
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        #when university and accepted information is not given
-        response=self.client.post(
-            '/api/v1/user/participant/',
-            HTTP_AUTHORIZATION=self.instructor_token2
-        )
-        data =  response.json()
-        
-        participant = data["participant"]
-        self.assertIsNotNone(participant)
-        self.assertEqual(participant["university"], "")
-        self.assertTrue(participant["accepted"])
+        data=response2.json()
+        self.assertIn("page")
+        self.assertIn("product")
+        page=data["page"]
+        product=data["product"]
+        self.assertEqual(page["product_count"], 15)
+        self.assertEqual(page["page_count"], 2)
+        self.assertEqual(page["current_page"], 2)
+        self.assertEqual(len(product), 5)
+        for i in range(1, 6):
+            self.assertEqual(product[i]["name"], "first_{num}".format(num=i+10))
 
-        user_count = User.objects.count()
-        self.assertEqual(user_count, 3)
-        participant_count = ParticipantProfile.objects.count()
-        self.assertEqual(participant_count, 3)
-        instructor_count = InstructorProfile.objects.count()
-        self.assertEqual(instructor_count, 2)
+    def test_get_user_product_wrong_parameter(self):
+        response=self.client.get(
+            '/api/v1/user/product/',
+            json.dumps({
+                "page":"100"
+            }),
+            HTTP_AUTHORIZATION="Token {token}".format(token=self.token.key),          
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(data["error"], "'page' parameter is not given")
+
+    def test_get_user_product_unauthorized(self):
+        response=self.client.get(
+            '/api/v1/user/product/',
+            json.dumps({
+                "page": "1"
+            }),
+            content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 """
