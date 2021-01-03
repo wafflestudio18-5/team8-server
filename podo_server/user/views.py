@@ -126,7 +126,11 @@ class UserViewSet(viewsets.GenericViewSet):
     def retrieve(self, request, pk=None):
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-        user=User.objects.get(id=pk)
+        
+        if pk == 'me':
+            user = request.user
+        else :
+            user=User.objects.get(id=pk)
         profile=user.profile.get()
         full_name=user.first_name
         nickname=profile.nickname
