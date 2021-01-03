@@ -69,7 +69,7 @@ class UserViewSet(viewsets.GenericViewSet):
                 elif social=="Kakao":
                     full_name=token_response["kakao_account"]["profile"]["nickname"]
             except KeyError:
-                return Response("'full_name' is required", status=status.HTTP_404_NOT_FOUND)
+                return Response("error":"'full_name' is required", status=status.HTTP_404_NOT_FOUND)
             try:
                 if social=="Google":
                     image=token_response["picture"]
