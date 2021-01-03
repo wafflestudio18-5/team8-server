@@ -142,7 +142,7 @@ class UserViewSet(viewsets.GenericViewSet):
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
         if bool(image):
             body["image"]=image
-        serializer=self.get_serializer(data=body)
+        serializer=self.get_serializer(profile,data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
         return Response(data, status=status.HTTP_200_OK)

@@ -5,7 +5,7 @@ from podo_app.models import Profile
 
 class UserAndProfileSerializer(serializers.ModelSerializer):
     user_id=serializers.IntegerField()
-    full_name = serializers.CharField()
+    full_name = serializers.SerializerMethodField()
     nickname = serializers.CharField()
     image=serializers.ImageField(required=False, allow_null=True)
     products_bought=serializers.IntegerField()    
@@ -20,9 +20,10 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
             "image", 
             "temperature",
             "products_bought",
-            "products_sold",
-#            "badges",
+            "products_sold"
         )
         
+    def get_full_name(self, profile):
+        return profile.user.first_name
 
     
