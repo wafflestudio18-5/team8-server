@@ -37,6 +37,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     ".podomarket.shop",
     '.ap-northeast-2.compute.amazonaws.com',
+    'web',
 ]
 
 IS_PRODUCTION = env("IS_PRODUCTION", cast=str, default="false") in ('true', 'True')
