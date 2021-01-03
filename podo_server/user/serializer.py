@@ -7,7 +7,7 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
     user_id=serializers.IntegerField()
     full_name = serializers.CharField()
     nickname = serializers.CharField()
-    image=serializers.URLField(required=False, allow_null=True)
+    image=serializers.ImageField(required=False, allow_null=True)
     products_bought=serializers.IntegerField()    
     products_sold=serializers.IntegerField()
     temperature=serializers.FloatField()
