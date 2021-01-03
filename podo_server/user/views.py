@@ -187,55 +187,34 @@ class UserViewSet(viewsets.GenericViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-    @action(detail=False, methods=['POST', 'PUT',  'DEL', 'GET'])
+    @action(detail=False, methods=['PUT', 'GET'])
     def city(self, request):
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         user=request.user
         profile=user.profile.get()
-        city_id=request.data["city_id"]
-        try:
-            city=City.objects.get(id=city_id)
-        except City.DoesNotExist:
-            return Response({"error":"there is no city with the given id"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if request.method=="POST":
-            profilecity=ProfileCity.create(profile=profile, city=city)
-
-            body={"nickname":profile.nickname, "city":[]}
-            profilecities=profilecity.filter(profile=profile)
-            for i in profilecities:
-                city=i.city
-                body["city"].append({"city_id":city.id, "city_name":city.name, "city_location":city.location}) 
-            return Response(body, status.HTTP_201_CREATED)
 
         elif request.method=="PUT":
-            former_city_id=request.data["former_city_id"]
-            try:
-                former_city=City.objects.get(id=former_city_id)
-            except City.DoesNotExist:
-                return Response({"error":"there is no city with the given id"}, status=status.HTTP_400_BAD_REQUEST)
-            profilecity=ProfileCity.objects.get(profile=profile, city=former_city)
-            profilecity.city=city
+            former_profilecities=ProfileCity.objects.filter(profile=profile)
+            for i in former_profilecities:
+                i.delete()
 
-            body={"nickname":profile.nickname, "city":[]}
-            profilecities=profilecity.filter(profile=profile)
-            for i in profilecities:
-                city=i.city
-                body["city"].append({"city_id":city.id, "city_name":city.name, "city_location":city.location}) 
-            return Response(body, status.HTTP_200_OK)
+            city_id=[request.data["city_id_1"], request.data["city_id_2"]]
+
+            body=[]
+            for id in city_id:
+                if id==0:
+                    pass
+                else:
+                    try:
+                        city=City.objects.get(id=id)
+                    except City.DoesNotExist:
+                        return Response({"error":"there is no city with the given id"}, status=status.HTTP_400_BAD_REQUEST)                
+                    ProfileCity.objects.create(profile=profile, city=city)
+                    body.append({"city_id":city.id, "city_name":city.name, "city_location":city.location})
+
+            return Response({"user_id":user.id, "nickname":profile.nickname, "city": body}, status.HTTP_200_OK)
         
-        elif request.method=="DEL":
-            profilecity=ProfileCity.objects.get(profile=profile, city=city)
-            profilecity.delete()
-
-            body={"nickname":profile.nickname, "city":[]}
-            profilecities=profilecity.filter(profile=profile)
-            for i in profilecities:
-                city=i.city
-                body["city"].append({"city_id":city.id, "city_name":city.name, "city_location":city.location}) 
-            return Response(body, status.HTTP_200_OK)
-
         elif request.method=="GET":
             cities=City.objects.filter()
             body=[]
