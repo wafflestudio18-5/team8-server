@@ -9,8 +9,9 @@ from rest_framework.response import Response
 import user.models as usermodel
 from django.db import models
 import requests
-from podo_app.models import Profile, ProfileCity, City
+from podo_app.models import Profile, ProfileCity, City, Product
 from user.serializer import UserAndProfileSerializer
+rom django.core.paginator import Paginator
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -227,12 +228,44 @@ class UserViewSet(viewsets.GenericViewSet):
             
             return Response({"city":body}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=[ 'GET'])
+    def productlist(self, request):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        user = request.user
+        profile=user.profile.get()
+        products=Product.objects.filter(seller=profile)
+
+        pages=Paginator(products, 10)
+        try:
+            page_number=request.data["page"]
+            if not page_number.is_integer():
+                return Response({"error": "'page' parameter is not integer"}, status=status.HTTP_400_BAD_REQUEST)
+        except KeyError:
+            return Response("error":"'page' parameter is not given", status=status.HTTP_400_BAD_REQUEST)
+        p=pages.page(page_number)
+
+###
+###PRODUCT SERIALIZER +DATA
+###To Be added after rebasing PRODUCT PR
+###
+
+        pagebody={"product_count":pages.count, "page_count":pages.page_range[-1], "current_page":p.number}
+
+###RESPONSE PART
+###To Be added after rebasing PRODUCT PR
+        
     @action(detail=True, methods=[ 'GET'])
-    def product(self, request, pk=None, pk2=None):
-        if pk==None:
-            return Response("a")
-        else:
-            return Response("b")
+    def product(self, request, pk=None):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        user = request.user
+        profile=user.profile.get()
+        try:
+            product=Product.objects.filter(seller=profile, id=pk)
+        except Product.DoesNotExist:
+            return Response({"error":"requested product does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-
-#
+###PRODUCT SERIALIZER+RESPONSE PART
+###To Be added after rebasing PRODUCT PR
+###
