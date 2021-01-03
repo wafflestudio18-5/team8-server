@@ -1,4 +1,3 @@
-#from seminar.models import Seminar, UserSeminar
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from rest_framework import status
@@ -7,9 +6,8 @@ from podo_app.models import Profile, ProfileCity, City
 import requests
 import json
 
-#from user.models import InstructorProfile, ParticipantProfile
 
-
+"""
 class PostUserTestCase(TestCase):
     client = Client()
     def setUp(self):
@@ -852,3 +850,4 @@ class PostUserParticipantTestCase(TestCase):
         self.assertEqual(participant_count, 3)
         instructor_count = InstructorProfile.objects.count()
         self.assertEqual(instructor_count, 2)
+"""
