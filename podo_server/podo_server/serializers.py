@@ -51,7 +51,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         return data
 
 
-class MessageSerializer(serializers.ModelSerializer):
+""" class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = (
@@ -59,7 +59,7 @@ class MessageSerializer(serializers.ModelSerializer):
             'ChatRoom_id',
             'body',
             'written_by',
-        )
+        ) """
 
 class AppointmentSerializer(serializers.ModelSerializer):
     time = serializers.TimeField(format='%H:%H', input_formats=['%H:%H'])
@@ -80,10 +80,17 @@ class SuggestPriceSerializer(serializers.ModelSerializer):
         model = SuggestPrice
         fields = (
             'id',
-            'seller_id',
-            'buyer_id',
-            'product_id',
+            'will_buyer',
             'confirm',
-            'chatroom_id',
+            'chatroom',
             'suggest_price'
         )
+
+    def validate(self, data):
+        will_buyer = data.get('will_buyer', None)
+        chatroom = data.get('chatroom', None)
+        suggest_price = data.get('suggest_price', None)
+
+        if bool(will_buyer) ^ bool(chatroom) ^ bool(suggest_price):
+            raise serializers.ValidationError("not all required")
+        return data
