@@ -11,34 +11,45 @@ class ProductSerializer(serializers.ModelSerializer):
             'price',
             'status',
             'distance_range',
-            'city_id',
-            'buyer_id',
-            'seller_id'
+            'city',
+            'buyer',
+            'seller'
             'count_likes',
             'count_comments',
             'count_views',
         )
-    def validate(self, attrs):
-        return
+    def validate(self, data):
+        name = data.get('name', None)
+        category = data.get('category', None)
+        price = data.get('price', None)
+        allow_suggest = data.get('allow_suggest', None)
+        city = data.get('city', None)
+        seller = data.get('seller', None)
 
-class LikeProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LikeProduct
-        fields = (
-            'id',
-            'profile_id',
-            'product_id',
-        )
+        if bool(name) ^ bool(category) ^ bool(price) ^ bool(allow_suggest) ^ bool(city) ^ bool(seller):
+            raise serializers.ValidationError("not all required")
+        return data
+
+
 
 class ChatRoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatRoom
         fields = (
             'id',
-            'product_id',
-            'body',
-            'buyer_id',
+            'will_buyer',
+            'is_active',
+            'product',
         )
+
+    def validate(self, data):
+        will_buyer = data.get('will_buyer', None)
+        product = data.get('product', None)
+
+        if bool(will_buyer) ^ bool(product):
+            raise serializers.ValidationError("not all required")
+        return data
+
 
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
