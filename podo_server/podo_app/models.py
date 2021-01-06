@@ -41,7 +41,7 @@ class Product(TimeModel):
   category = models.CharField(max_length=50)
   price = models.PositiveIntegerField()
   allow_suggest = models.BooleanField()
-  status = models.CharField(max_length=50)
+  status = models.PositiveIntegerField()
   seller = models.ForeignKey(Profile, related_name='selling_products',on_delete=models.SET_NULL, null=True)
   buyer = models.ForeignKey(Profile, related_name='bought_products',on_delete=models.SET_NULL, null=True)
   
