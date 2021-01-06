@@ -28,7 +28,7 @@ class UserViewSet(viewsets.GenericViewSet):
     def create(self, request):
         access_token=request.data['access_token']
         social_url=""
-s        social=request.data['social']
+        social=request.data['social']
 
         if social=="Google":
             social_url="https://oauth2.googleapis.com/tokeninfo?id_token={ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)
