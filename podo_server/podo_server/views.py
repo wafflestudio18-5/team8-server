@@ -60,6 +60,37 @@ class ProductViewSet(viewsets.GenericViewSet):
         return Response(self.get_serializer(products, many=True).data)
 
 
+    @action(detail=True, methods=['PUT', 'POST', 'DELETE'])
+    def suggestprice(self, request, pk):
+        product = self.get_object()
+
+        if self.request.method == 'POST':
+            return self._suggest_price
+        elif self.request.method == 'PUT':
+            return self._confirm_price
+        else:
+            return self._deny_price
+
+    def _suggest_price(self, product):
+        if not product.allow_suggest:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = SuggestPriceSerializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        price = serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def _confirm_price(self, product):
+        suggestion = product.chatrooms.suggest_price
+        suggestion.confirm = True
+        return Response(SuggestPriceSerializer(suggestion).data, status=status.HTTP_200_OK)
+
+    def _deny_price(self, product):
+        suggestion = product.chatrooms.suggest_price.delete()
+        return Response(status=status.HTTP_200_OK)
+
+
 class ChatRoomViewSet(viewsets.GenericViewSet):
     queryset = ChatRoom.object.all()
     serializer_class = ChatRoomSerializer
@@ -72,11 +103,9 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         return self.serializer_class
 
     def create(self, request):
-        user = request.user
-
-        if ChatRoom.objects.filter(buy_id=user, product_id=request.data.get('product_id')).exists():  # buyer_id=user?
+        if ChatRoom.objects.filter(will_buyer=request.data.get('will_buyer', None), product=request.data.get('product', None)).exists(): 
             return Response({"error": "You have already chatroom"}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         chatroom = serializer.save()
@@ -85,12 +114,11 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
 
     def destroy(self, request, pk=None):
         chatroom = self.get_object()
-        user = request.user
-        if ChatRoom.objects.filter(buy_ie=user, product_id=request.data.get('product_id')).exists():
+        if ChatRoom.objects.filter(will_buyer=request.data.get('will_buyer', None), product=request.data.get('product', None)).exists():
             chatroom.is_active = False
         return Response(self.get_serializer(chatroom).data)
 
-
+""" 
     @action(detail=True, methods=['POST', 'GET'])
     def Message(self, request, pk):
         chatroom = self.get_object()
@@ -107,9 +135,10 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
     def _petch_message(self, chatroom):
         messages = Message.objects.all()
         serializer = MessageSerializer(messages, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data) """
 
-    @action(detail=True, methods=['PUT', 'POST', 'DELETE'])
+
+"""     @action(detail=True, methods=['PUT', 'POST', 'DELETE'])
     def appointment(self, request, pk):
         chatroom = self.get_object()
 
@@ -134,34 +163,6 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
 
     def _deny_appo(self, chatroom):
         appointment = Appointment.objects.get(chatroom_id=chatroom).delete()
-        return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK) """
 
-    @action(detail=True, methods=['PUT', 'POST', 'DELETE'])
-    def suggestprice(self, request, pk):
-        chatroom = self.get_object()
 
-        if self.request.method == 'POST':
-            return self._suggest_price
-        elif self.request.method == 'PUT':
-            return self._confirm_price
-        else:
-            return self._deny_price
-
-    def _suggest_price(self, chatroom):
-        if not chatroom.product.allow_suggest:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = SuggestPriceSerializer(data=self.request.data)
-        serializer.is_valid(raise_exception=True)
-        price = serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def _confirm_price(self, chatroom):
-        suggestion = SuggestPrice.objects.get(chatroom_id=chatroom)
-        suggestion.confirm = True
-        return Response(SuggestPriceSerializer(suggestion).data, status=status.HTTP_200_OK)
-
-    def _deny_price(self, chatroom):
-        suggestion = SuggestPrice.objects.get(chatroom_id=chatroom).delete()
-        return Response(status=status.HTTP_200_OK)
