@@ -74,7 +74,7 @@ class UserViewSet(viewsets.GenericViewSet):
                 if social=="Google":
                     image=token_response["picture"]
                 elif social=="Kakao":
-                    image=token_response["properties"]["thumbnail"]
+                    image=token_response["properties"]["thumbnail_image"]
             except KeyError:
                 image=None
 
