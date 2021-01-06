@@ -134,32 +134,28 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data) """
 
-
-"""     @action(detail=True, methods=['PUT', 'POST', 'DELETE'])
-    def appointment(self, request, pk):
+    @action(detail=True, methods=['PUT', 'POST'])
+    def transaction(self, request, pk):
         chatroom = self.get_object()
 
         if self.request.method == 'POST':
-            return self._suggest_appo
+            return self._transacted
         elif self.request.method == 'PUT':
-            return self._confirm_appo
-        else:
-            return self._deny_appo
+            return self._review
 
-    def _suggest_appo(self, chatroom):
-        serializer = AppointmentSerializer(data=self.request.data)
+    def _transacted(self, chatroom):
+        #check seller
+        serializer = TransactionSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         price = serializer.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def _confirm_appo(self, chatroom):
-        appointment = Appointment.objects.get(chatroom_id=chatroom)
+    def _review(self, chatroom):
+"""         appointment = Appointment.objects.get(chatroom_id=chatroom)
         appointment.confirm = True
-        return Response(AppointmentSerializer(appointment).data, status=status.HTTP_200_OK)
+        return Response(AppointmentSerializer(appointment).data, status=status.HTTP_200_OK) """
 
-    def _deny_appo(self, chatroom):
-        appointment = Appointment.objects.get(chatroom_id=chatroom).delete()
-        return Response(status=status.HTTP_200_OK) """
+
 
 
