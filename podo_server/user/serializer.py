@@ -4,7 +4,7 @@ from rest_framework.authtoken.models import Token
 from podo_app.models import Profile
 
 class UserAndProfileSerializer(serializers.ModelSerializer):
-    user_id=serializers.IntegerField()
+    user_id=serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
     nickname = serializers.CharField()
     image=serializers.ImageField(required=False, allow_null=True)
@@ -25,5 +25,7 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
         
     def get_full_name(self, profile):
         return profile.user.first_name
+    def get_user_id(self, profile):
+        return profile.user.id
 
     
