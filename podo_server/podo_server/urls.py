@@ -25,7 +25,6 @@ app_name = 'product'
 router = SimpleRouter()
 router.register('product', ProductViewSet, basename='product')
 router.register('chatroom', ChatRoomViewSet, basename='chatroom')
-router.register('likeproduct', LikeProductViewSet, basename='likeproduct')
 
 urlpatterns = [
     path('', ping),
