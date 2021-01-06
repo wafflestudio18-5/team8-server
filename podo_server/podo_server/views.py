@@ -18,20 +18,17 @@ def ping(request):
 class ProductViewSet(viewsets.GenericViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = (IsAuthenticated, )
 
     def get_permissions(self):
-        return super(ProductViewSet, self).get_permissions()
+        if self.action in ('create'):
+            return super(ProductViewSet, self).get_permissions()
+        return
 
     def get_serializer_class(self):
         return self.serializer_class
 
     def create(self, request):
-        if not request.data.filter('city').exists():
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        city = City.objects.get_or_create(name=request.data.pop('city'))
-
-        serializer = self.get_serializer(data=request.data, city=city)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         product = serializer.save()
 
@@ -46,7 +43,7 @@ class ProductViewSet(viewsets.GenericViewSet):
         order = request.query_params.get('order')
         max_price = request.query_params.get('max_price')
         category = request.query_params.get('category')
-
+        city = request.query_params.get('city')
         products = self.get_queryset()
         if name:
             products = products.filter(name__icontains=name)
@@ -57,7 +54,9 @@ class ProductViewSet(viewsets.GenericViewSet):
         if max_price:
             products = products.filter(price__lte=max_price)  ## max_price 보다 작은 것
         if category:
-            products = products.filter(category__icontains=category)
+            products = products.filter(product__category=category)
+        if city:
+            products = products.filter(product__city=city)
         return Response(self.get_serializer(products, many=True).data)
 
 
@@ -109,9 +108,6 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         messages = Message.objects.all()
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
-<<<<<<< HEAD
-=======
-
 
     @action(detail=True, methods=['PUT', 'POST', 'DELETE'])
     def appointment(self, request, pk):
@@ -169,4 +165,3 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
     def _deny_price(self, chatroom):
         suggestion = SuggestPrice.objects.get(chatroom_id=chatroom).delete()
         return Response(status=status.HTTP_200_OK)
->>>>>>> 1db2be9... suggestprice api
