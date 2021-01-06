@@ -71,7 +71,7 @@ class ChatRoom(TimeModel):
       ('product','will_buyer'),
     )
 
-class Message(TimeModel):
+""" class Message(TimeModel):
   chatroom = models.ForeignKey(ChatRoom, related_name='messages',on_delete=models.CASCADE)
   body = models.CharField(max_length=500)
   written_by = models.ForeignKey(Profile, related_name='messages',on_delete=models.SET_NULL, null=True)
@@ -81,14 +81,12 @@ class Appointment():
   seller = models.ForeignKey(Profile, related_name = 'appointment', on_delete=models.SET_NULL, null=True)
   buyer = models.ForeignKey(Profile, related_name='appointment', on_delete=models.SET_NULL, null=True)
   product = models.ForeignKey(Product, related_name='appointment', on_delete=models.SET_NULL)
-  confirm = models.BooleanField(defualt=False)
-  chatroom = models.ForeignKey(ChatRoom, related_name='appointment', on_delete=models.SET_NULL)
+  confirm = models.BooleanField(default=False)
+  chatroom = models.ForeignKey(ChatRoom, related_name='appointment', on_delete=models.SET_NULL) """
 
 
 class SuggestPrice():
   suggest_price = models.PositiveSmallIntegerField()
-  seller = models.ForeignKey(Profile, related_name='appointment', on_delete=models.SET_NULL, null=True)
-  buyer = models.ForeignKey(Profile, related_name='appointment', on_delete=models.SET_NULL, null=True)
-  product = models.ForeignKey(Product, related_name='appointment', on_delete=models.SET_NULL)
-  confirm = models.BooleanField(defualt=False)
-  chatroom = models.ForeignKey(ChatRoom, related_name='appointment', on_delete=models.SET_NULL)
+  will_buyer = models.ForeignKey(Profile, related_name='suggest_price', on_delete=models.SET_NULL, null=True)
+  confirm = models.BooleanField(default=False)
+  chatroom = models.ForeignKey(ChatRoom, related_name='suggest_price', on_delete=models.SET_NULL)

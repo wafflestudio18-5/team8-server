@@ -16,7 +16,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
-from podo_server.podo_server.views import *
+from django.urls import include, path
+from podo_server.views import *
+from django.urls import path, include
 
 app_name = 'product'
 
@@ -27,6 +29,7 @@ router.register('likeproduct', LikeProductViewSet, basename='likeproduct')
 
 urlpatterns = [
     path('', ping),
+    path('', include((router.urls)))
     path('api/v1/', include('user.urls')),
     path('admin/', admin.site.urls),
 ]
