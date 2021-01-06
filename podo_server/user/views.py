@@ -96,14 +96,8 @@ class UserViewSet(viewsets.GenericViewSet):
             full_name=user.first_name
             nickname=profile.nickname
             image=profile.image
-            if profile.products_sold.exist():
-                products_sold=profile.products_sold
-            else:
-                products_sold=[]
-            if profile.products_bought.exist():
-                products_bought=profile.products_bought
-            else:
-                products_bought=[]
+        products_sold=profile.products_sold
+        products_bought=profile.products_bought
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
         if bool(image):
