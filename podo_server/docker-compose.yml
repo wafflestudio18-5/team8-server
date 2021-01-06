@@ -1,0 +1,20 @@
+  version: '2'
+  services:
+    nginx:
+      image: nginx:latest
+      ports:
+        - "80:80"
+      volumes:
+        - .:/code
+        - ./config/nginx:/etc/nginx/conf.d
+      depends_on:
+        - web
+    web:  
+      build:
+        context: ./
+        dockerfile : Dockerfile
+      command: gunicorn podo_server.wsgi:application --bind 0.0.0.0:8000
+      volumes:
+        - .:/code
+      expose:
+        - "8000"
