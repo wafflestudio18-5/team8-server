@@ -17,6 +17,7 @@ from django.contrib import admin
 from podo_server.views import *
 from django.urls import path, include
 from rest_framework.routers import SimpleRouter
+from django.urls import include, path
 
 
 app_name = 'product'
@@ -28,6 +29,7 @@ router.register('likeproduct', LikeProductViewSet, basename='likeproduct')
 
 urlpatterns = [
     path('', ping),
+    path('', include((router.urls)))
     path('api/v1/', include('user.urls')),
     path('api/v1/', include('podo_app.urls')),
     path('admin/', admin.site.urls),
