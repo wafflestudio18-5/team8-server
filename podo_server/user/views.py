@@ -9,11 +9,10 @@ from rest_framework.response import Response
 import user.models as usermodel
 from django.db import models
 import requests
-from podo_app.models import Profile, ProfileCity, City, Product
-from user.serializer import UserAndProfileSerializer
+from podo_app.models import Profile, ProfileCity, City, Product, LikeProduct
+from user.serializer import UserAndProfileSerializer, UserProductSerializer
 from django.core.paginator import Paginator
-#
-from user.serializer import UserProductSerializer
+
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -258,3 +257,18 @@ class UserViewSet(viewsets.GenericViewSet):
 
         return Response({"page":pagebody, "product":productbody}, status=status.HTTP_200_OK)
         
+    @action(detail=False, methods=['PUT',])
+    def likeproduct(self, request):
+        user = request.user     ##create
+        if not user.profile.like_products.filter(product=request.get('product')).exists():
+            serializer = self.LikeProductSerializer(data=request.data)
+            serializer.is_valid(raise_excetption=True)
+            likeproduct = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:  ## put
+            like = user.profile.like_products.filter(product=request.get('product'))
+            like.is_active = not like.is_active
+            serializer = self.LikeProductSerializer(like)
+            serializer.is_valid(raise_exception=True)
+            likeproduct = serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)

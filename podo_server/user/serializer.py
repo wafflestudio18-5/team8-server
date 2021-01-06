@@ -54,3 +54,12 @@ class UserProductSerializer(serializers.ModelSerializer):
         )
     def validate(self, attrs):
         return
+class LikeProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LikeProduct
+        fields = (
+            'id',
+            'profile',
+            'product',
+            'active'
+        )
