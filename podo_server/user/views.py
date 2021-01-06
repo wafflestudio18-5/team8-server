@@ -231,7 +231,7 @@ s        social=request.data['social']
             return Response({"city":body}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=[ 'GET'])
-    def productlist(self, request):
+    def product(self, request):
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         user = request.user
@@ -257,19 +257,3 @@ s        social=request.data['social']
 
         return Response({"page":pagebody, "product":productbody}, status=status.HTTP_200_OK)
         
-    @action(detail=True, methods=[ 'GET'])
-    def product(self, request, pk=None):
-        if not request.user.is_authenticated:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-        user = request.user
-        profile=user.profile.get()
-        try:
-            product=Product.objects.get(seller=profile, id=pk)
-        except Product.DoesNotExist:
-            return Response({"error":"requested product does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-        product_serialized=UserProductSerializer(product)  
-        product_serialized.is_valid(raise_exception=True)
-        data= product_serialized.data
-
-        return Response(data, status=status.HTTP_200_OK)
