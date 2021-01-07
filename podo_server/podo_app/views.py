@@ -129,6 +129,9 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         if ChatRoom.objects.filter(will_buyer=request.data.get('will_buyer', None), product=request.data.get('product', None)).exists(): 
             return Response({"error": "You have already chatroom"}, status=status.HTTP_400_BAD_REQUEST)
         
+        if Product.objects.filter(will_buyer=request.data.get('will_buyer', None), seller=Profile.objects.get(user=request.user)):
+            return Response({"error": "you are seller!"}, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         chatroom = serializer.save()
@@ -155,19 +158,31 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=['PUT', 'POST'])
     def transaction(self, request, pk):
         chatroom = self.get_object()
-
+        user=Profile.objects.get(user=request.user)
         if self.request.method == 'POST':
-            return self._transacted
+            return self._transacted(chatroom, user)
         elif self.request.method == 'PUT':
             return self._review
 
-    def _transacted(self, chatroom):
-        #check seller
-        serializer = TransactionSerializer(data=self.request.data)
-        serializer.is_valid(raise_exception=True)
-        price = serializer.save()
+    def _transacted(self, chatroom, user):
+        if not chatroom.product.seller==user:
+            return Response({"error": "you are not seller"}, status=status.HTTP_403_FORBIDDEN)
+        trans = Transaction.objects.create(chatroom=chatroom)
+        chatroom.product.status=0
+        chatroom.product.buyer=chatroom.will_buyer
+        chatroom.product.save()
+        return Response(TransactionSerializer(trans).data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def _review(self, chatroom):
-        return
+    def _review(self, chatroom, user):
+        if not self.request.get("review", 0):
+            return Response({"error": "not all required"}, status=status.HTTP_400_BAD_REQUEST)
+        if chatroom.product.seller==user:
+            trans = Transaction.objects.get(chatroom=chatroom)
+            trans.seller_review=self.request.get("review")
+            trans.save()
+        else:
+            trans = Transaction.objects.get(chatroom=chatroom)
+            trans.buyer_review=self.request.get("review")
+            trans.save()
+        trans = Transaction.objects.get(chatroom=chatroom)
+        return Response(TransactionSerializer(trans).data, status=status.HTTP_200_OK)
