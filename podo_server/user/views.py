@@ -9,8 +9,11 @@ from rest_framework.response import Response
 import user.models as usermodel
 from django.db import models
 import requests
-from podo_app.models import Profile, ProfileCity, City
+from podo_app.models import Profile, ProfileCity, City, Product
 from user.serializer import UserAndProfileSerializer
+from django.core.paginator import Paginator
+#
+from user.serializer import UserProductSerializer
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -85,7 +88,7 @@ class UserViewSet(viewsets.GenericViewSet):
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
             if bool(image):
-                profile.image=image
+                profile.image_url=image
 
             profile.save()
             login(request, user)
@@ -95,13 +98,10 @@ class UserViewSet(viewsets.GenericViewSet):
             profile=user.profile.get()
             full_name=user.first_name
             nickname=profile.nickname
-            image=profile.image
         products_sold=profile.products_sold
         products_bought=profile.products_bought
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
-        if bool(image):
-            body["image"]=image        
         serializer=self.get_serializer(profile, data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
@@ -227,3 +227,30 @@ class UserViewSet(viewsets.GenericViewSet):
             
             return Response({"city":body}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=[ 'GET'])
+    def product(self, request):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        user = request.user
+        profile=user.profile.get()
+        products=Product.objects.filter(seller=profile)
+
+        pages=Paginator(products, 10)
+        try:
+            page_number=request.data["page"]
+            if not page_number.is_integer():
+                return Response({"error": "'page' parameter is not integer"}, status=status.HTTP_400_BAD_REQUEST)
+        except KeyError:
+            return Response({"error": " 'page' parameter is not given"}, status=status.HTTP_400_BAD_REQUEST)
+        p=pages.page(page_number)
+
+        productbody=[]
+        for product in products:
+            product_serialized=UserProductSerializer(product)
+            product_serialized.is_valid(raise_exception=True)
+            productbody.append(product_serialized.data)
+
+        pagebody={"product_count":pages.count, "page_count":pages.page_range[-1], "current_page":p.number}
+
+        return Response({"page":pagebody, "product":productbody}, status=status.HTTP_200_OK)
+        

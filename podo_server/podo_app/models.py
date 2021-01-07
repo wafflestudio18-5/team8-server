@@ -23,6 +23,7 @@ class Profile(TimeModel):
   nickname = models.CharField(max_length=100)
   temperature = models.FloatField(default=36.5)
   image = models.ImageField(upload_to=profileImagePath)
+  image_url = models.URLField(null=True)
   products_sold= models.IntegerField(default=0)
   products_bought= models.IntegerField(default=0)
 
@@ -54,6 +55,7 @@ class Product(TimeModel):
 class ProductImage(TimeModel):
   product = models.ForeignKey(Product, related_name='images',on_delete=models.CASCADE)
   image = models.ImageField(upload_to=productImagePath)
+  image_url = models.URLField(null=True)
 
 class LikeProduct(TimeModel):
   profile = models.ForeignKey(Profile, related_name='like_products',on_delete=models.SET_NULL, null=True)
