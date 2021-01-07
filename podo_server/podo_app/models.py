@@ -41,7 +41,7 @@ class Product(TimeModel):
   category = models.CharField(max_length=50)
   price = models.PositiveIntegerField()
   allow_suggest = models.BooleanField()
-  status = models.CharField(max_length=50)
+  status = models.PositiveIntegerField(default=2)
   seller = models.ForeignKey(Profile, related_name='selling_products',on_delete=models.SET_NULL, null=True)
   buyer = models.ForeignKey(Profile, related_name='bought_products',on_delete=models.SET_NULL, null=True)
   
@@ -65,7 +65,7 @@ class LikeProduct(TimeModel):
 class ChatRoom(TimeModel):
   product = models.ForeignKey(Product, related_name='chatrooms',on_delete=models.SET_NULL, null=True)
   will_buyer = models.ForeignKey(Profile, related_name='chatrooms',on_delete=models.SET_NULL, null=True)
-  
+  is_active = models.BooleanField(default=True)
   class Meta:
     unique_together = (
       ('product','will_buyer'),
@@ -75,3 +75,15 @@ class Message(TimeModel):
   chatroom = models.ForeignKey(ChatRoom, related_name='messages',on_delete=models.CASCADE)
   body = models.CharField(max_length=500)
   written_by = models.ForeignKey(Profile, related_name='messages',on_delete=models.SET_NULL, null=True)
+  
+class Transaction():
+  chatroom = models.ForeignKey(ChatRoom, related_name='appointment', on_delete=models.SET_NULL) 
+  seller_review = models.PositiveSmallIntegerField(default=0)
+  buyer_review = models.PositiveSmallIntegerField(default=0)
+
+
+class SuggestPrice():
+  suggest_price = models.PositiveSmallIntegerField()
+  will_buyer = models.ForeignKey(Profile, related_name='suggest_price', on_delete=models.SET_NULL, null=True)
+  confirm = models.BooleanField(default=False)
+  chatroom = models.ForeignKey(ChatRoom, related_name='suggest_price', on_delete=models.SET_NULL)
