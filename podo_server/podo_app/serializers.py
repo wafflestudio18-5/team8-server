@@ -13,7 +13,8 @@ class ProductSerializer(serializers.ModelSerializer):
             'distance_range',
             'city',
             'buyer',
-            'seller'
+            'seller',
+            'allow_suggest',
             'count_likes',
             'count_comments',
             'count_views',
@@ -22,10 +23,16 @@ class ProductSerializer(serializers.ModelSerializer):
         name = data.get('name', None)
         category = data.get('category', None)
         price = data.get('price', None)
+        print(data.get('allow_suggest'))
         allow_suggest = data.get('allow_suggest', None)
         city = data.get('city', None)
         seller = data.get('seller', None)
-
+        print(name)
+        print(category)
+        print(price)
+        print(allow_suggest)
+        print(city)
+        print(seller)
         if not (bool(name) and bool(category) and bool(price) and bool(allow_suggest) and bool(city) and bool(seller)):
             raise serializers.ValidationError("not all required")
         return data
