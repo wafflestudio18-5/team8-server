@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..podo_app.models import Product, LikeProduct, ChatRoom, Transaction
+from podo_app.models import Product, LikeProduct, ChatRoom, Transaction, SuggestPrice
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:

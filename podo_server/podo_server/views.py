@@ -4,8 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from ..podo_app.models import *
-from ..podo_server.serializers import *
+from podo_app.models import *
+from podo_server.serializers import *
 
 def ping(request):
     return HttpResponse('pong-dong')
@@ -92,7 +92,7 @@ class ProductViewSet(viewsets.GenericViewSet):
 
 
 class ChatRoomViewSet(viewsets.GenericViewSet):
-    queryset = ChatRoom.object.all()
+    queryset = ChatRoom.objects.all()
     serializer_class = ChatRoomSerializer
     permission_classes = (IsAuthenticated,)
 
@@ -118,25 +118,6 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
             chatroom.is_active = False
         return Response(self.get_serializer(chatroom).data)
 
-""" 
-    @action(detail=True, methods=['POST', 'GET'])
-    def Message(self, request, pk):
-        chatroom = self.get_object()
-
-        if self.request.method == 'POST':
-            return self._send_message
-        else:
-            return self._petch_message
-
-    def _send_message(self, chatroom):
-        Message.objets.create(chatroom=chatroom, body=self.request.data.get('body'), written_by=self.request.user)
-        return Response(status=status.HTTP_201_CREATED)
-
-    def _petch_message(self, chatroom):
-        messages = Message.objects.all()
-        serializer = MessageSerializer(messages, many=True)
-        return Response(serializer.data) """
-
     @action(detail=True, methods=['PUT', 'POST'])
     def transaction(self, request, pk):
         chatroom = self.get_object()
@@ -155,10 +136,4 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def _review(self, chatroom):
-"""         appointment = Appointment.objects.get(chatroom_id=chatroom)
-        appointment.confirm = True
-        return Response(AppointmentSerializer(appointment).data, status=status.HTTP_200_OK) """
-
-
-
-
+        return
