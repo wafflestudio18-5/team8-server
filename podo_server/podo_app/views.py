@@ -88,6 +88,26 @@ class ProductViewSet(viewsets.GenericViewSet):
         suggestion = product.chatrooms.suggest_price.delete()
         return Response(status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'])
+    def image(self, request, pk=None):
+        product = self.get_object()
+        
+        img = request.FILES.get('img-file')
+        if img:
+            product_image = ProductImage.objects.create(product=product)
+            product_image.image = img
+            product_image.save()
+        
+        return Response(self.get_serializer(product).data, status=status.HTTP_201_CREATED)
+
+    @image.mapping.delete
+    def deleteImage(self, request, pk=None):
+        img_id = request.data.get('id',None)
+        if img_id:
+            if ProductImage.objects.filter(id=img_id).exists():
+                ProductImage.objects.get(id=img_id).delete()
+        product = self.get_object()
+        return Response(self.get_serializer(product).data, status=status.HTTP_200_OK)
 
 class ChatRoomViewSet(viewsets.GenericViewSet):
     queryset = ChatRoom.objects.all()

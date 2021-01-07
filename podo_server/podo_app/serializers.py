@@ -34,7 +34,7 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def get_images(self, product):
         product_image_list = list(product.images.all())
-        return map( lambda product_image: product_image.image.url ,product_image_list)
+        return map( lambda product_image: {"id":product_image.id,"image_url":product_image.image.url} ,product_image_list)
 
 
 class ChatRoomSerializer(serializers.ModelSerializer):
