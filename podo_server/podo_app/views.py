@@ -14,7 +14,7 @@ class ProductViewSet(viewsets.GenericViewSet):
     def get_permissions(self):
         if self.action in ('create'):
             return super(ProductViewSet, self).get_permissions()
-        return
+        return (IsAuthenticated(), )
 
     def get_serializer_class(self):
         return self.serializer_class
