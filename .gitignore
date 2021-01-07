@@ -5,6 +5,10 @@ __pycache__/
 
 # C extensions
 *.so
+<<<<<<< HEAD
+=======
+.idea
+>>>>>>> 1b521df... gitignore
 # Distribution / packaging
 .Python
 build/
