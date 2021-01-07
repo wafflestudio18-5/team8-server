@@ -78,8 +78,8 @@ class Message(TimeModel):
   
 class Transaction():
   chatroom = models.ForeignKey(ChatRoom, related_name='appointment', on_delete=models.SET_NULL) 
-  seller_review = PositiveSmallIntegerField(default=0)
-  buyer_review = PositiveSmallIntegerField(default=0)
+  seller_review = models.PositiveSmallIntegerField(default=0)
+  buyer_review = models.PositiveSmallIntegerField(default=0)
 
 
 class SuggestPrice():
