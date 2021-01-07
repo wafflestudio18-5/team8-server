@@ -13,15 +13,16 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from podo_server.views import *
+from rest_framework.routers import SimpleRouter
+from podo_app.views import *
 from django.urls import path, include
 
-from podo_server.views import ping
+app_name = 'podo_app'
+
+router = SimpleRouter()
+router.register('product', ProductViewSet, basename='product')
+router.register('chatroom', ChatRoomViewSet, basename='chatroom')
 
 urlpatterns = [
-    path('', ping),
-    path('api/v1/', include('user.urls')),
-    path('api/v1/', include('podo_app.urls')),
-    path('admin/', admin.site.urls),
+    path('', include((router.urls))),
 ]
