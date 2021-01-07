@@ -28,7 +28,7 @@ router.register('chatroom', ChatRoomViewSet, basename='chatroom')
 
 urlpatterns = [
     path('', ping),
-    path('', include((router.urls)))
+    path('', include((router.urls))),
     path('api/v1/', include('user.urls')),
     path('admin/', admin.site.urls),
 ]
