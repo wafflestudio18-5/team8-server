@@ -75,11 +75,11 @@ class UserViewSet(viewsets.GenericViewSet):
                 return Response({"error":"'full_name' is required"}, status=status.HTTP_404_NOT_FOUND)
             try:
                 if social=="Google":
-                    image=token_response["picture"]
+                    image_url=token_response["picture"]
                 elif social=="Kakao":
-                    image=token_response["properties"]["thumbnail_image"]
+                    image_url=token_response["properties"]["thumbnail_image"]
             except KeyError:
-                image=None
+                image_url=None
 
             nickname=full_name
             
@@ -87,8 +87,8 @@ class UserViewSet(viewsets.GenericViewSet):
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
-            if bool(image):
-                profile.image_url=image
+            if bool(image_url):
+                profile.image_url=image_url
 
             profile.save()
             login(request, user)
