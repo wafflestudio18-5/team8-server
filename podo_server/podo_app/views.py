@@ -52,9 +52,9 @@ class ProductViewSet(viewsets.GenericViewSet):
         if max_price:
             products = products.filter(price__lte=max_price)  ## max_price 보다 작은 것
         if category:
-            products = products.filter(product__category=category)
+            products = products.filter(category=category)
         if city:
-            products = products.filter(product__city=city)
+            products = products.filter(city=city)
         return Response(self.get_serializer(products, many=True).data)
 
 
