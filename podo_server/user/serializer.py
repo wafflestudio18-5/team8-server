@@ -35,6 +35,15 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
         else:
             return profile.image_url
     
+class LikeProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LikeProduct
+        fields = (
+            'id',
+            'profile',
+            'product',
+            'active'
+        )
 
 class UserProductSerializer(serializers.ModelSerializer):
     class Meta:

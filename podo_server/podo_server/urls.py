@@ -22,6 +22,7 @@ from django.urls import path, include
 
 app_name = 'product'
 
+from podo_server.views import ping
 router = SimpleRouter()
 router.register('product', ProductViewSet, basename='product')
 router.register('chatroom', ChatRoomViewSet, basename='chatroom')
