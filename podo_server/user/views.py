@@ -85,7 +85,7 @@ class UserViewSet(viewsets.GenericViewSet):
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
             if bool(image):
-                profile.image=image
+                profile.image_url=image
 
             profile.save()
             login(request, user)
@@ -95,13 +95,10 @@ class UserViewSet(viewsets.GenericViewSet):
             profile=user.profile.get()
             full_name=user.first_name
             nickname=profile.nickname
-            image=profile.image
         products_sold=profile.products_sold
         products_bought=profile.products_bought
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
-        if bool(image):
-            body["image"]=image        
         serializer=self.get_serializer(profile, data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
