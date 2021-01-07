@@ -75,11 +75,11 @@ class UserViewSet(viewsets.GenericViewSet):
                 return Response({"error":"'full_name' is required"}, status=status.HTTP_404_NOT_FOUND)
             try:
                 if social=="Google":
-                    image=token_response["picture"]
+                    image_url=token_response["picture"]
                 elif social=="Kakao":
-                    image=token_response["properties"]["thumbnail_image"]
+                    image_url=token_response["properties"]["thumbnail_image"]
             except KeyError:
-                image=None
+                image_url=None
 
             nickname=full_name
             
@@ -87,8 +87,8 @@ class UserViewSet(viewsets.GenericViewSet):
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
-            if bool(image):
-                profile.image_url=image
+            if bool(image_url):
+                profile.image_url=image_url
 
             profile.save()
             login(request, user)
@@ -141,14 +141,11 @@ class UserViewSet(viewsets.GenericViewSet):
         profile=user.profile.get()
         full_name=user.first_name
         nickname=profile.nickname
-        image=profile.image
         products_sold=profile.products_sold
         products_bought=profile.products_bought
 
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
-        if bool(image):
-            body["image"]=image
         serializer=self.get_serializer(profile,data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
