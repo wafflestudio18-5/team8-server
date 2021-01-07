@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..podo_app.models import Product, LikeProduct, ChatRoom, Message
+from ..podo_app.models import Product, LikeProduct, ChatRoom, Transaction
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -51,29 +51,21 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         return data
 
 
-""" class MessageSerializer(serializers.ModelSerializer):
+class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Message
+        model = Transaction
         fields = (
             'id',
-            'ChatRoom_id',
-            'body',
-            'written_by',
-        ) """
-
-class AppointmentSerializer(serializers.ModelSerializer):
-    time = serializers.TimeField(format='%H:%H', input_formats=['%H:%H'])
-    class Meta:
-        model = Appointment
-        fields = (
-            'id',
-            'seller_id',
-            'buyer_id',
-            'product_id',
-            'confirm',
-            'chatroom_id',
-            'time'
+            'chatroom',
+            'buyer_review',
+            'seller_review'
         )
+    
+    def validate(self, data):
+        chatroom = data.get('chatroom', None)
+        if bool(chatroom):
+            raise serializers.ValidationError("not all required")
+        return data
 
 class SuggestPriceSerializer(serializers.ModelSerializer):
     class Meta:
