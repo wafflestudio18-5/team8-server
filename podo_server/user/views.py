@@ -31,11 +31,14 @@ class UserViewSet(viewsets.GenericViewSet):
 
         if social=="Google":
             social_url="https://oauth2.googleapis.com/tokeninfo?id_token={ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)
+
+
             token_response = requests.get(
                 social_url
                 )
             token_response=json.loads(token_response.text)
-            if token_response==None:
+
+            if token_response==None or token_response=='':
                 return Response({"error":"Oauth has not returned any data"}, status=status.HTTP_404_NOT_FOUND)
             try:
                 username=social+"_"+str(token_response["sub"])
@@ -45,25 +48,27 @@ class UserViewSet(viewsets.GenericViewSet):
         elif social=="Kakao":
             social_url="https://kapi.kakao.com/v2/user/me"
             authorization={"Authorization": "Bearer {ACCESS_TOKEN}".format(ACCESS_TOKEN=access_token)}        
+
             token_response = requests.get(
                 social_url,
                 headers=authorization
                 )
             token_response=json.loads(token_response.text)
 
-            if token_response==None:
+            if token_response==None or token_response=='':
                 return Response({"error":"Oauth has not returned any data"}, status=status.HTTP_404_NOT_FOUND)
             try: 
                 id=token_response["id"]
             except KeyError:
-                error={"error":token_response["msg"]}
-                return Response(error, status=status.HTTP_400_BAD_REQUEST)       
+                error={"error":token_response}
+                return Response(error, status=status.HTTP_400_BAD_REQUEST)  
+
             username=social+"_"+str(token_response["id"])
+
         else:
             return Response({"error":"'social' parameter is wrong"}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         is_new=not(User.objects.filter(username=username).exists())
-                        
         if is_new:
             try:
                 if social=="Google":
@@ -81,26 +86,31 @@ class UserViewSet(viewsets.GenericViewSet):
                 image_url=None
 
             nickname=full_name
-            
             user=User.objects.create_user(username)
             user.first_name=full_name
             user.save()
             profile=Profile.objects.create(user=user, nickname=nickname)
             if bool(image_url):
                 profile.image_url=image_url
+                image=image_url
 
             profile.save()
             login(request, user)
+            products_sold=0
+            products_bought=0
         else:
             user=User.objects.get(username=username)
             login(request, user)
             profile=user.profile.get()
             full_name=user.first_name
             nickname=profile.nickname
+            image=profile.image_url
         products_sold=profile.products_sold
         products_bought=profile.products_bought
         body={"user_id":user.id, "full_name":full_name, "nickname":nickname, 
             "products_bought":products_bought, "products_sold":products_sold, "temperature":profile.temperature}
+        if bool(image):
+            body["image"]=image     
         serializer=self.get_serializer(profile, data=body)
         serializer.is_valid(raise_exception=True)
         data=serializer.data
@@ -154,9 +164,9 @@ class UserViewSet(viewsets.GenericViewSet):
         if pk != 'me':
             return Response({"error": "Can't update other user's information"}, status=status.HTTP_403_FORBIDDEN)
         user = request.user
-        profile=user.profile.get()
         if not user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        profile=user.profile.get()
 
         
         img = request.FILES.get('img-file')
@@ -182,7 +192,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
     def delete(self, request, pk=None):
         if pk != 'me':
-            return Response({"error": "Can't update other Users information"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Can't update other user's information"}, status=status.HTTP_403_FORBIDDEN)
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
@@ -202,27 +212,33 @@ class UserViewSet(viewsets.GenericViewSet):
         profile=user.profile.get()
 
         if request.method=="PUT":
-            former_profilecities=ProfileCity.objects.filter(profile=profile)
-            for i in former_profilecities:
-                i.delete()
-
             city_id=[request.data["city_id_1"], request.data["city_id_2"]]
-            body=[]
             for id in city_id:
-                if id=="0":
+                if id==0:
                     pass
                 else:   
                     try:
                         city=City.objects.get(id=id)
                     except City.DoesNotExist:
                         return Response({"error":"there is no city with the given id"}, status=status.HTTP_400_BAD_REQUEST)                
+
+            former_profilecities=ProfileCity.objects.filter(profile=profile)
+            for i in former_profilecities:
+                i.delete()
+
+            body=[]
+            for id in city_id:
+                if id==0:
+                    pass
+                else:   
+                    city=City.objects.get(id=id)
                     ProfileCity.objects.create(profile=profile, city=city)
                     body.append({"city_id":city.id, "city_name":city.name, "city_location":city.location})
 
-            return Response({"user_id":user.id, "nickname":profile.nickname, "city": body}, status.HTTP_200_OK)
+            return Response({"id":user.id, "nickname":profile.nickname, "city": body}, status.HTTP_200_OK)
         
         elif request.method=="GET":
-            cities=City.objects.filter()
+            cities=City.objects.all()
             body=[]
             for city in cities:
                 instance={"city_id": city.id, "city_name":city.name, "city_location":city.location}
@@ -252,12 +268,12 @@ class UserViewSet(viewsets.GenericViewSet):
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         user = request.user
         profile=user.profile.get()
-        products=Product.objects.filter(seller=profile)
+        products=Product.objects.filter(seller=profile).order_by('id')
 
         pages=Paginator(products, 10)
         try:
             page_number=request.data["page"]
-            if not page_number.is_integer():
+            if not float(page_number).is_integer():
                 return Response({"error": "'page' parameter is not integer"}, status=status.HTTP_400_BAD_REQUEST)
         except KeyError:
             return Response({"error": " 'page' parameter is not given"}, status=status.HTTP_400_BAD_REQUEST)
