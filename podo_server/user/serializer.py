@@ -6,7 +6,7 @@ from podo_app.models import Profile
 from podo_app.models import Product, LikeProduct, ChatRoom, Message
 
 class UserAndProfileSerializer(serializers.ModelSerializer):
-    user_id=serializers.SerializerMethodField()
+    id=serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
     nickname = serializers.CharField()
     image=serializers.SerializerMethodField()
@@ -16,7 +16,7 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model=Profile
         fields=(
-            "user_id",
+            "id",
             "full_name",
             "nickname", 
             "image", 
@@ -27,7 +27,7 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
         
     def get_full_name(self, profile):
         return profile.user.first_name
-    def get_user_id(self, profile):
+    def get_id(self, profile):
         return profile.user.id
     def get_image(self, profile):
         if profile.image:
