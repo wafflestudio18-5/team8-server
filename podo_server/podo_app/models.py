@@ -71,7 +71,7 @@ class ChatRoom(TimeModel):
       ('product','will_buyer'),
     )
 
-""" class Message(TimeModel):
+class Message(TimeModel):
   chatroom = models.ForeignKey(ChatRoom, related_name='messages',on_delete=models.CASCADE)
   body = models.CharField(max_length=500)
   written_by = models.ForeignKey(Profile, related_name='messages',on_delete=models.SET_NULL, null=True)
