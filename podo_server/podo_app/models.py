@@ -9,7 +9,7 @@ def profileImagePath(instance, filename):
 
 def productImagePath(instance, filename):
   ext = filename.split('.')[-1]
-  filename =  '{}.{}'.format(instance.pk, ext)
+  filename =  '{}.{}'.format((str(instance.product.id)+'_'+str(instance.id)), ext)
   return os.path.join('product', filename)
 
 class TimeModel(models.Model):

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from podo_app.models import Product, LikeProduct, ChatRoom, Transaction, SuggestPrice
 
 class ProductSerializer(serializers.ModelSerializer):
+    images = serializers.SerializerMethodField()
     class Meta:
         model = Product
         fields = (
@@ -18,6 +19,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'count_likes',
             'count_comments',
             'count_views',
+            'images'
         )
     def validate(self, data):
         name = data.get('name', None)
@@ -29,7 +31,10 @@ class ProductSerializer(serializers.ModelSerializer):
         if not (bool(name) and bool(category) and bool(price) and bool(allow_suggest) and bool(city)):
             raise serializers.ValidationError("not all required")
         return data
-
+    
+    def get_images(self, product):
+        product_image_list = list(product.images.all())
+        return map( lambda product_image: product_image.image.url ,product_image_list)
 
 
 class ChatRoomSerializer(serializers.ModelSerializer):

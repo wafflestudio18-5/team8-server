@@ -23,6 +23,12 @@ class ProductViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         product = serializer.save()
+        
+        img = request.FILES.get('img-file')
+        if img:
+            product_image = ProductImage.objects.create(product=product)
+            product_image.image = img
+            product_image.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
