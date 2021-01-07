@@ -246,10 +246,15 @@ class UserViewSet(viewsets.GenericViewSet):
             
             return Response({"city":body}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['PUT'])
+    @action(detail=False, methods=['PUT', 'GET'])
     def likeproduct(self, request):
-        user = request.user     ##create
+        if self.request.method == 'PUT':
+            return self._likeproduct(request)
+        else:
+            return self._like(request)
 
+    def _likeproduct(self, request):
+        user = request.user     ##create
         if not LikeProduct.objects.filter(profile=user.profile.get(), product=request.data.get('product')).exists():
             serializer = LikeProductSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -266,6 +271,12 @@ class UserViewSet(viewsets.GenericViewSet):
             like.save()
             serializer = LikeProductSerializer(like)
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def _like(self, request):
+        user = Profile.objects.get(user=request.user)
+        query = LikeProduct.objects.filter(profile = user)
+        return Response(LikeProductSerializer(query, many=True).data, status=status.HTTP_200_OK)
+
 
     @action(detail=False, methods=['GET'])
     def product(self, request):
