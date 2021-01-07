@@ -123,6 +123,13 @@ class UserViewSet(viewsets.GenericViewSet):
         logout(request)
         return Response(status=status.HTTP_200_OK)
 
+    def list(self,request):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        profiles = Profile.objects.all()
+        data= UserAndProfileSerializer(profiles, many=True).data
+        return Response(data, status=status.HTTP_200_OK)
+
     def retrieve(self, request, pk=None):
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
