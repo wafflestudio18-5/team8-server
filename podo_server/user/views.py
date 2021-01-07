@@ -9,8 +9,11 @@ from rest_framework.response import Response
 import user.models as usermodel
 from django.db import models
 import requests
-from podo_app.models import Profile, ProfileCity, City
+from podo_app.models import Profile, ProfileCity, City, Product
 from user.serializer import UserAndProfileSerializer
+from django.core.paginator import Paginator
+#
+from user.serializer import UserProductSerializer
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -224,3 +227,30 @@ class UserViewSet(viewsets.GenericViewSet):
             
             return Response({"city":body}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=[ 'GET'])
+    def product(self, request):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        user = request.user
+        profile=user.profile.get()
+        products=Product.objects.filter(seller=profile)
+
+        pages=Paginator(products, 10)
+        try:
+            page_number=request.data["page"]
+            if not page_number.is_integer():
+                return Response({"error": "'page' parameter is not integer"}, status=status.HTTP_400_BAD_REQUEST)
+        except KeyError:
+            return Response({"error": " 'page' parameter is not given"}, status=status.HTTP_400_BAD_REQUEST)
+        p=pages.page(page_number)
+
+        productbody=[]
+        for product in products:
+            product_serialized=UserProductSerializer(product)
+            product_serialized.is_valid(raise_exception=True)
+            productbody.append(product_serialized.data)
+
+        pagebody={"product_count":pages.count, "page_count":pages.page_range[-1], "current_page":p.number}
+
+        return Response({"page":pagebody, "product":productbody}, status=status.HTTP_200_OK)
+        
