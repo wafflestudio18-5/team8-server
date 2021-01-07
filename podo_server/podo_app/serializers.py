@@ -79,15 +79,14 @@ class SuggestPriceSerializer(serializers.ModelSerializer):
             'id',
             'will_buyer',
             'confirm',
-            'chatroom',
+            'product',
             'suggest_price'
         )
 
     def validate(self, data):
         will_buyer = data.get('will_buyer', None)
-        chatroom = data.get('chatroom', None)
         suggest_price = data.get('suggest_price', None)
 
-        if not(bool(will_buyer) and bool(chatroom) and bool(suggest_price)):
+        if not(bool(will_buyer) and bool(suggest_price)):
             raise serializers.ValidationError("not all required")
         return data

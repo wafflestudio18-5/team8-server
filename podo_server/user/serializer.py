@@ -36,14 +36,23 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
             return profile.image_url
     
 class LikeProductSerializer(serializers.ModelSerializer):
+    active = serializers.BooleanField(default=True)
     class Meta:
         model = LikeProduct
         fields = (
             'id',
             'profile',
             'product',
-            'active'
+            'active',
         )
+
+    def validate(self, data):
+        profile = data.get('profile', None)
+        product = data.get('product', None)
+
+        if not (bool(profile) and bool(product)):
+            raise serializers.ValidationError("not all required")
+        return data
 
 class UserProductSerializer(serializers.ModelSerializer):
     class Meta:

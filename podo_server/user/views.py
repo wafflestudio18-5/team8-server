@@ -10,7 +10,7 @@ import user.models as usermodel
 from django.db import models
 import requests
 from podo_app.models import Profile, ProfileCity, City, Product, LikeProduct
-from user.serializer import UserAndProfileSerializer, UserProductSerializer
+from user.serializer import UserAndProfileSerializer, UserProductSerializer, LikeProductSerializer
 from django.core.paginator import Paginator
 
 
@@ -249,17 +249,22 @@ class UserViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['PUT'])
     def likeproduct(self, request):
         user = request.user     ##create
-        if not user.profile.like_products.filter(product=request.get('product')).exists():
-            serializer = self.LikeProductSerializer(data=request.data)
-            serializer.is_valid(raise_excetption=True)
-            likeproduct = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:  ## put
-            like = user.profile.like_products.filter(product=request.get('product'))
-            like.is_active = not like.is_active
-            serializer = self.LikeProductSerializer(like)
+
+        if not LikeProduct.objects.filter(profile=user.profile.get(), product=request.data.get('product')).exists():
+            serializer = LikeProductSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             likeproduct = serializer.save()
+            like = LikeProduct.objects.filter(profile=user.profile.get(), product=request.data.get('product')).get()
+            like.active=True
+            like.save()
+            serializer = LikeProductSerializer(like)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:  ## put
+            like = LikeProduct.objects.filter(profile=user.profile.get(), product=request.data.get('product')).get()
+            like.active = not like.active
+            
+            like.save()
+            serializer = LikeProductSerializer(like)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['GET'])
@@ -289,18 +294,3 @@ class UserViewSet(viewsets.GenericViewSet):
 
         return Response({"page":pagebody, "product":productbody}, status=status.HTTP_200_OK)
         
-    @action(detail=False, methods=['PUT',])
-    def likeproduct(self, request):
-        user = request.user     ##create
-        if not user.profile.like_products.filter(product=request.get('product')).exists():
-            serializer = self.LikeProductSerializer(data=request.data)
-            serializer.is_valid(raise_excetption=True)
-            likeproduct = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:  ## put
-            like = user.profile.like_products.filter(product=request.get('product'))
-            like.is_active = not like.is_active
-            serializer = self.LikeProductSerializer(like)
-            serializer.is_valid(raise_exception=True)
-            likeproduct = serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)

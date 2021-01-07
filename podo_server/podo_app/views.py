@@ -61,13 +61,12 @@ class ProductViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=['PUT', 'POST', 'DELETE'])
     def suggestprice(self, request, pk):
         product = self.get_object()
-
         if self.request.method == 'POST':
-            return self._suggest_price
+            return self._suggest_price(product)
         elif self.request.method == 'PUT':
-            return self._confirm_price
+            return self._confirm_price(product)
         else:
-            return self._deny_price
+            return self._deny_price(product)
 
     def _suggest_price(self, product):
         if not product.allow_suggest:
@@ -76,17 +75,23 @@ class ProductViewSet(viewsets.GenericViewSet):
         serializer = SuggestPriceSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         price = serializer.save()
+        price.product=product
+        price.save()
+        serializer = SuggestPriceSerializer(price)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def _confirm_price(self, product):
-        suggestion = product.chatrooms.suggest_price
+        suggestion = product.suggest_prices.get()
         suggestion.confirm = True
+        suggestion.save()
+
         return Response(SuggestPriceSerializer(suggestion).data, status=status.HTTP_200_OK)
 
     def _deny_price(self, product):
-        suggestion = product.chatrooms.suggest_price.delete()
-        return Response(status=status.HTTP_200_OK)
+        suggestion = product.suggest_prices.get()
+        suggestion.delete()
+        return Response(SuggestPriceSerializer(suggestion).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def image(self, request, pk=None):
@@ -115,7 +120,7 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
     permission_classes = (IsAuthenticated,)
 
     def get_permissions(self):
-        return super(ProductViewSet, self).get_permissions()
+        return super(ChatRoomViewSet, self).get_permissions()
 
     def get_serializer_class(self):
         return self.serializer_class
@@ -127,13 +132,24 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         chatroom = serializer.save()
-
+        chatroom.is_active=True
+        chatroom.save()
+        serializer = self.get_serializer(chatroom)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def destroy(self, request, pk=None):
+    def retrieve(self, request, pk=None):
+        chatroom = self.get_object()
+        return Response(self.get_serializer(chatroom).data)
+
+    def list(self, request):
+        chatrooms = self.get_queryset()
+        return Response(self.get_serializer(chatrooms, many=True).data)
+
+    def delete(self, request, pk=None):
         chatroom = self.get_object()
         if ChatRoom.objects.filter(will_buyer=request.data.get('will_buyer', None), product=request.data.get('product', None)).exists():
             chatroom.is_active = False
+            chatroom.save()
         return Response(self.get_serializer(chatroom).data)
 
     @action(detail=True, methods=['PUT', 'POST'])
