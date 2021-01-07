@@ -26,7 +26,7 @@ class ProductSerializer(serializers.ModelSerializer):
         city = data.get('city', None)
         seller = data.get('seller', None)
 
-        if bool(name) ^ bool(category) ^ bool(price) ^ bool(allow_suggest) ^ bool(city) ^ bool(seller):
+        if not (bool(name) and bool(category) and bool(price) and bool(allow_suggest) and bool(city) and bool(seller)):
             raise serializers.ValidationError("not all required")
         return data
 
@@ -46,7 +46,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         will_buyer = data.get('will_buyer', None)
         product = data.get('product', None)
 
-        if bool(will_buyer) ^ bool(product):
+        if not(bool(will_buyer) and bool(product)):
             raise serializers.ValidationError("not all required")
         return data
 
@@ -83,6 +83,6 @@ class SuggestPriceSerializer(serializers.ModelSerializer):
         chatroom = data.get('chatroom', None)
         suggest_price = data.get('suggest_price', None)
 
-        if bool(will_buyer) ^ bool(chatroom) ^ bool(suggest_price):
+        if not(bool(will_buyer) and bool(chatroom) and bool(suggest_price)):
             raise serializers.ValidationError("not all required")
         return data
