@@ -31,7 +31,7 @@ class UserAndProfileSerializer(serializers.ModelSerializer):
         return profile.user.id
     def get_image(self, profile):
         if profile.image:
-            return profile.image
+            return profile.image.url
         else:
             return profile.image_url
     
