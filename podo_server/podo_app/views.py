@@ -12,7 +12,7 @@ class ProductViewSet(viewsets.GenericViewSet):
     serializer_class = ProductSerializer
 
     def get_permissions(self):
-        if self.action in ('create'):
+        if self.action in ('create',):
             return super(ProductViewSet, self).get_permissions()
         return (IsAuthenticated(), )
 
@@ -56,6 +56,11 @@ class ProductViewSet(viewsets.GenericViewSet):
         if city:
             products = products.filter(city=city)
         return Response(self.get_serializer(products, many=True).data)
+
+    def delete(self, request, pk=None):
+        product = self.get_object()
+        product.delete()
+        return Response(self.get_serializer(product).data, status=status.HTTP_200_OK)
 
 
     @action(detail=True, methods=['PUT', 'POST', 'DELETE'])
