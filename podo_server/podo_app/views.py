@@ -97,7 +97,11 @@ class ProductViewSet(viewsets.GenericViewSet):
 
     def _suggest_price(self, product):
         if not product.allow_suggest:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "now allowed"}, status=status.HTTP_403_FORBIDDEN)
+        
+        user = Profile.objects.get(user=self.request.user)
+        if product.seller == user:
+            return Response({"error": "you are seller!"}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = SuggestPriceSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
@@ -109,6 +113,9 @@ class ProductViewSet(viewsets.GenericViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def _confirm_price(self, product):
+        user = Profile.objects.get(user=self.request.user)
+        if not product.seller == user:
+            return Response({"error": "you are not seller!"}, status=status.HTTP_403_FORBIDDEN)
         suggestion = product.suggest_prices.get()
         suggestion.confirm = True
         suggestion.save()
@@ -116,6 +123,9 @@ class ProductViewSet(viewsets.GenericViewSet):
         return Response(SuggestPriceSerializer(suggestion).data, status=status.HTTP_200_OK)
 
     def _deny_price(self, product):
+        user = Profile.objects.get(user=self.request.user)
+        if not product.seller == user:
+            return Response({"error": "you are not seller!"}, status=status.HTTP_403_FORBIDDEN)
         suggestion = product.suggest_prices.get()
         suggestion.delete()
         return Response(SuggestPriceSerializer(suggestion).data, status=status.HTTP_200_OK)
@@ -153,11 +163,11 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         return self.serializer_class
 
     def create(self, request):
-        if ChatRoom.objects.filter(will_buyer=request.data.get('will_buyer', None), product=request.data.get('product', None)).exists(): 
+        if ChatRoom.objects.filter(will_buyer=Profile.objects.get(user=request.user), product=request.data.get('product', None)).exists(): 
             return Response({"error": "You have already chatroom"}, status=status.HTTP_400_BAD_REQUEST)
         
-        if Product.objects.filter(will_buyer=request.data.get('will_buyer', None), seller=Profile.objects.get(user=request.user)):
-            return Response({"error": "you are seller!"}, status=status.HTTP_400_BAD_REQUEST)
+        if Product.objects.filter(will_buyer=Profile.objects.get(user=request.user), seller=Profile.objects.get(user=request.user)):
+            return Response({"error": "you are seller!"}, status=status.HTTP_403_FORBIDDEN)
         
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -177,10 +187,12 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
 
     def delete(self, request, pk=None):
         chatroom = self.get_object()
-        if ChatRoom.objects.filter(will_buyer=request.data.get('will_buyer', None), product=request.data.get('product', None)).exists():
+        if ChatRoom.objects.filter(will_buyer=Profile.objects.get(user=request.user), product=request.data.get('product', None)).exists():
             chatroom.is_active = False
             chatroom.save()
-        return Response(self.get_serializer(chatroom).data)
+        else:
+            return Response({"error": "you are not buyer in this chat"}, status=status.HTTP_403_FORBIDDEN)
+        return Response(self.get_serializer(chatroom).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['PUT', 'POST'])
     def transaction(self, request, pk):
