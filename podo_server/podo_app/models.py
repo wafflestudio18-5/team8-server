@@ -37,8 +37,16 @@ class  ProfileCity(TimeModel):
   city = models.ForeignKey(City, related_name='profile_cities',on_delete=models.CASCADE)
   
 class Product(TimeModel):
+  CATEGORIES = (
+    ('DIGITAL', 'DIGITAL'),
+    ('BOOK', 'BOOK'),
+    ('CLOTHES', 'CLOTHES'),
+    ('BEAUTY', 'BEAUTY'),
+    ('FURNITURE', 'FURNITURE'),
+    ('KITCHEN UTENSILS','KITCHEN UTENSILS'),
+  )
   name = models.CharField(max_length=100)
-  category = models.CharField(max_length=50)
+  category = models.CharField(max_length=50, choices=CATEGORIES)
   price = models.PositiveIntegerField()
   allow_suggest = models.BooleanField()
   status = models.PositiveIntegerField(default=2)
