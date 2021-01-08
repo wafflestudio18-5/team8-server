@@ -12,7 +12,7 @@ class ProductViewSet(viewsets.GenericViewSet):
     serializer_class = ProductSerializer
 
     def get_permissions(self):
-        if self.action in ('create',):
+        if self.action in ('create', 'delete'):
             return super(ProductViewSet, self).get_permissions()
         return (IsAuthenticated(), )
 
