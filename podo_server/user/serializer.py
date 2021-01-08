@@ -54,24 +54,6 @@ class LikeProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("not all required")
         return data
 
-class UserProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Product
-        fields = (
-            'id',
-            'name',
-            'category',
-            'price',
-            'status',
-            'city_id',
-            'buyer_id',
-            'seller_id'
-            'count_likes',
-            'count_comments',
-            'count_views',
-        )
-    def validate(self, attrs):
-        return
 class LikeProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = LikeProduct

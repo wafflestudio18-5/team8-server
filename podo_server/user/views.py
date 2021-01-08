@@ -9,8 +9,9 @@ from rest_framework.response import Response
 import user.models as usermodel
 from django.db import models
 import requests
+from podo_app.serializers import ProductSerializer
 from podo_app.models import Profile, ProfileCity, City, Product, LikeProduct
-from user.serializer import UserAndProfileSerializer, UserProductSerializer, LikeProductSerializer
+from user.serializer import UserAndProfileSerializer, LikeProductSerializer
 from django.core.paginator import Paginator
 
 
@@ -300,7 +301,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
         productbody=[]
         for product in products:
-            product_serialized=UserProductSerializer(product)
+            product_serialized=ProductSerializer(product)
             product_serialized.is_valid(raise_exception=True)
             productbody.append(product_serialized.data)
 
