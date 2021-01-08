@@ -288,9 +288,12 @@ class UserViewSet(viewsets.GenericViewSet):
 
         pages=Paginator(products, 10)
         try:
-            page_number=request.query_params.get('page')
-            if not float(page_number).is_integer():
-                return Response({"error": "'page' parameter is not integer"}, status=status.HTTP_400_BAD_REQUEST)
+            page_number=request.query_params.get("page")
+            try:
+                if not float(page_number).is_integer():
+                    return Response({"error": "page para is not int"}, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                return Response({"error": "page para is not int"}, status=status.HTTP_400_BAD_REQUEST)
         except KeyError:
             return Response({"error": " 'page' parameter is not given"}, status=status.HTTP_400_BAD_REQUEST)
         p=pages.page(page_number)

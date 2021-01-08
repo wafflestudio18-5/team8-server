@@ -57,11 +57,16 @@ class ProductViewSet(viewsets.GenericViewSet):
             products = products.filter(city=city)
 
         pages = Paginator(products, 10)
-        if not request.data.get("page", None):
+
+
+        if not request.query_params.get("page"):
             return Response({"error": "no page parameter"}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            page_number = request.data.get("page")
-        if not float(page_number).is_integer():
+            page_number = request.query_params.get("page")
+        try:
+            if not float(page_number).is_integer():
+                return Response({"error": "page para is not int"}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError:
             return Response({"error": "page para is not int"}, status=status.HTTP_400_BAD_REQUEST)
         p=pages.page(page_number)
 
