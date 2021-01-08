@@ -163,10 +163,10 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         return self.serializer_class
 
     def create(self, request):
-        if ChatRoom.objects.filter(will_buyer=Profile.objects.get(user=request.user), product=request.data.get('product', None)).exists(): 
+        if ChatRoom.objects.filter(will_buyer=request.data.get('will_buyer', None), product=request.data.get('product', None)).exists(): 
             return Response({"error": "You have already chatroom"}, status=status.HTTP_400_BAD_REQUEST)
         
-        if Product.objects.filter(will_buyer=Profile.objects.get(user=request.user), seller=Profile.objects.get(user=request.user)):
+        if Product.objects.filter(will_buyer=request.data.get('will_buyer', None), seller=Profile.objects.get(user=request.user)):
             return Response({"error": "you are seller!"}, status=status.HTTP_403_FORBIDDEN)
         
         serializer = self.get_serializer(data=request.data)
@@ -187,7 +187,7 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
 
     def delete(self, request, pk=None):
         chatroom = self.get_object()
-        if ChatRoom.objects.filter(will_buyer=Profile.objects.get(user=request.user), product=request.data.get('product', None)).exists():
+        if ChatRoom.objects.filter(will_buyer=request.data.get('will_buyer', None), product=request.data.get('product', None)).exists():
             chatroom.is_active = False
             chatroom.save()
         else:
