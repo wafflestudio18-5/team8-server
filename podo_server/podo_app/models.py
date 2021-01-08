@@ -37,8 +37,16 @@ class  ProfileCity(TimeModel):
   city = models.ForeignKey(City, related_name='profile_cities',on_delete=models.CASCADE)
   
 class Product(TimeModel):
+  CATEGORIES = (
+    ('DIGITAL', 'DIGITAL'),
+    ('BOOK', 'BOOK'),
+    ('CLOTHES', 'CLOTHES'),
+    ('BEAUTY', 'BEAUTY'),
+    ('FURNITURE', 'FURNITURE'),
+    ('KITCHEN UTENSILS','KITCHEN UTENSILS'),
+  )
   name = models.CharField(max_length=100)
-  category = models.CharField(max_length=50)
+  category = models.CharField(max_length=50, choices=CATEGORIES)
   price = models.PositiveIntegerField()
   allow_suggest = models.BooleanField()
   status = models.PositiveIntegerField(default=2)
@@ -76,14 +84,14 @@ class Message(TimeModel):
   body = models.CharField(max_length=500)
   written_by = models.ForeignKey(Profile, related_name='messages',on_delete=models.SET_NULL, null=True)
   
-class Transaction():
-  chatroom = models.ForeignKey(ChatRoom, related_name='appointment', on_delete=models.SET_NULL) 
+class Transaction(TimeModel):
+  chatroom = models.ForeignKey(ChatRoom, related_name='appointment', on_delete=models.SET_NULL, null=True) 
   seller_review = models.PositiveSmallIntegerField(default=0)
   buyer_review = models.PositiveSmallIntegerField(default=0)
 
 
-class SuggestPrice():
+class SuggestPrice(TimeModel):
   suggest_price = models.PositiveSmallIntegerField()
   will_buyer = models.ForeignKey(Profile, related_name='suggest_price', on_delete=models.SET_NULL, null=True)
   confirm = models.BooleanField(default=False)
-  chatroom = models.ForeignKey(ChatRoom, related_name='suggest_price', on_delete=models.SET_NULL)
+  product = models.ForeignKey(Product, related_name='suggest_prices',on_delete=models.SET_NULL, null=True)

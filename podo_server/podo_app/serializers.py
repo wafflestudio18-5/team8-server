@@ -1,8 +1,11 @@
 from rest_framework import serializers
 from podo_app.models import Product, LikeProduct, ChatRoom, Transaction, SuggestPrice
+from user.serializer import LikeProductSerializer
 
 class ProductSerializer(serializers.ModelSerializer):
     images = serializers.SerializerMethodField()
+    likeproduct = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         fields = (
@@ -19,8 +22,10 @@ class ProductSerializer(serializers.ModelSerializer):
             'count_likes',
             'count_comments',
             'count_views',
-            'images'
+            'images',
+            'likeproduct',
         )
+
     def validate(self, data):
         name = data.get('name', None)
         category = data.get('category', None)
@@ -35,6 +40,11 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_images(self, product):
         product_image_list = list(product.images.all())
         return map( lambda product_image: {"id":product_image.id,"image_url":product_image.image.url} ,product_image_list)
+
+    def get_likeproduct(self, product):
+        query = LikeProduct.objects.filter(product = product)
+        return LikeProductSerializer(query, many=True).data
+
 
 
 class ChatRoomSerializer(serializers.ModelSerializer):
@@ -79,15 +89,14 @@ class SuggestPriceSerializer(serializers.ModelSerializer):
             'id',
             'will_buyer',
             'confirm',
-            'chatroom',
+            'product',
             'suggest_price'
         )
 
     def validate(self, data):
         will_buyer = data.get('will_buyer', None)
-        chatroom = data.get('chatroom', None)
         suggest_price = data.get('suggest_price', None)
 
-        if not(bool(will_buyer) and bool(chatroom) and bool(suggest_price)):
+        if not(bool(will_buyer) and bool(suggest_price)):
             raise serializers.ValidationError("not all required")
         return data
