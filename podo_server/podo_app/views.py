@@ -32,6 +32,15 @@ class ProductViewSet(viewsets.GenericViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    def update(self, request, pk=None):
+        product=self.get_object()
+
+        serializer = self.get_serializer(product, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        data=serializer.data  
+        return Response(data, status=status.HTTP_200_OK)
+
     def retrieve(self, request, pk=None):
         product = self.get_object()
         return Response(self.get_serializer(product).data)

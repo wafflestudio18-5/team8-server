@@ -168,7 +168,6 @@ class UserViewSet(viewsets.GenericViewSet):
         if not user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         profile=user.profile.get()
-
         
         img = request.FILES.get('img-file')
         if img:
