@@ -35,7 +35,7 @@ class ProductViewSet(viewsets.GenericViewSet):
     def update(self, request, pk=None):
         product=self.get_object()
 
-        serializer = self.get_serializer(product, data=data, partial=True)
+        serializer = self.get_serializer(product, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         data=serializer.data  
