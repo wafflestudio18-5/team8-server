@@ -3,7 +3,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from django.core.paginator import Paginator
 from podo_app.models import *
 from podo_app.serializers import *
 
@@ -55,6 +55,28 @@ class ProductViewSet(viewsets.GenericViewSet):
             products = products.filter(category=category)
         if city:
             products = products.filter(city=city)
+
+        pages = Paginator(products, 10)
+        if not request.data.get("page", None):
+            return Response({"error": "no page parameter"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            page_number = request.data.get("page")
+        if not float(page_number).is_integer():
+            return Response({"error": "page para is not int"}, status=status.HTTP_400_BAD_REQUEST)
+        p=pages.page(page_number)
+
+        p_list=[]
+        for i in products:
+            product_serialized=ProductSerializer(i)
+            p_list.append(product_serialized.data)
+
+        pagebody={"product_count":pages.count, "page_count":pages.page_range[-1], "current_page":p.number}
+
+        return Response({"page":pagebody, "product":p_list}, status=status.HTTP_200_OK)
+        
+
+
+
         return Response(self.get_serializer(products, many=True).data)
 
     def delete(self, request, pk=None):
