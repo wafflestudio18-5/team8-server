@@ -30,13 +30,14 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", cast=str, default="local_key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = env('DEBUG', cast=str, default='false') in ('true', 'True')
+DEBUG = env('DEBUG', cast=str, default='true') in ('true', 'True')
 DEBUG_TOOLBAR = env('DEBUG_TOOLBAR', cast=str, default='false') in ('true', 'True')
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     ".podomarket.shop",
     '.ap-northeast-2.compute.amazonaws.com',
+    'web',
 ]
 
 IS_PRODUCTION = env("IS_PRODUCTION", cast=str, default="false") in ('true', 'True')
@@ -59,6 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -161,6 +163,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# AWS
+AWS_REGION = 'ap-northeast-2'
+## AWS Access
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", cast=str, default="")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", cast=str, default="")
+## S3 Storage
+AWS_STORAGE_BUCKET_NAME = 'podo-bucket'
+DEFAULT_FILE_STORAGE = 'podo_server.storages.MediaStorage'
+STATICFILES_STORAGE = 'podo_server.storages.StaticStorage'
+MEDIAFILES_LOCATION = 'media'
+STATICFILES_LOCATION = 'static'
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME,AWS_REGION)
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
@@ -180,4 +194,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [
+    STATIC_DIR,
+]
