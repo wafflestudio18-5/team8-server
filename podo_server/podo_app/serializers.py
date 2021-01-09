@@ -13,6 +13,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'name',
             'category',
             'price',
+            'body',
             'status',
             'distance_range',
             'city',
