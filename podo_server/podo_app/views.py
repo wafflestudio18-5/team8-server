@@ -180,7 +180,7 @@ class ChatRoomViewSet(viewsets.GenericViewSet):
         if ChatRoom.objects.filter(will_buyer=request.data.get('will_buyer', None), product=request.data.get('product', None)).exists(): 
             return Response({"error": "You have already chatroom"}, status=status.HTTP_400_BAD_REQUEST)
         
-        if Product.objects.filter(will_buyer=request.data.get('will_buyer', None), seller=Profile.objects.get(user=request.user)):
+        if Product.objects.filter(buyer=request.data.get('will_buyer', None), seller=Profile.objects.get(user=request.user)):
             return Response({"error": "you are seller!"}, status=status.HTTP_403_FORBIDDEN)
         
         serializer = self.get_serializer(data=request.data)
