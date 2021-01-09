@@ -23,7 +23,7 @@ class Profile(TimeModel):
   nickname = models.CharField(max_length=100)
   temperature = models.FloatField(default=36.5)
   image = models.ImageField(upload_to=profileImagePath)
-  image_url = models.URLField(null=True)
+  image_url = models.URLField(null=True, blank=True)
   products_sold= models.IntegerField(default=0)
   products_bought= models.IntegerField(default=0)
 
@@ -58,22 +58,22 @@ class Product(TimeModel):
   count_likes = models.PositiveSmallIntegerField(default=0)
   count_views = models.PositiveSmallIntegerField(default=0)
 
-  city = models.ForeignKey(City, related_name='here_products',on_delete=models.SET_NULL, null=True)
+  city = models.ForeignKey(City, related_name='here_products',on_delete=models.SET_NULL, null=True, blank=True)
   distance_range = models.PositiveSmallIntegerField(default=0)
 
 class ProductImage(TimeModel):
   product = models.ForeignKey(Product, related_name='images',on_delete=models.CASCADE)
   image = models.ImageField(upload_to=productImagePath)
-  image_url = models.URLField(null=True)
+  image_url = models.URLField(null=True, blank=True)
 
 class LikeProduct(TimeModel):
-  profile = models.ForeignKey(Profile, related_name='like_products',on_delete=models.SET_NULL, null=True)
-  product = models.ForeignKey(Product, related_name='like_profiles',on_delete=models.SET_NULL, null=True)
+  profile = models.ForeignKey(Profile, related_name='like_products',on_delete=models.SET_NULL, null=True, blank=True)
+  product = models.ForeignKey(Product, related_name='like_profiles',on_delete=models.SET_NULL, null=True, blank=True)
   active = models.BooleanField(default=True)
 
 class ChatRoom(TimeModel):
-  product = models.ForeignKey(Product, related_name='chatrooms',on_delete=models.SET_NULL, null=True)
-  will_buyer = models.ForeignKey(Profile, related_name='chatrooms',on_delete=models.SET_NULL, null=True)
+  product = models.ForeignKey(Product, related_name='chatrooms',on_delete=models.SET_NULL, null=True, blank=True)
+  will_buyer = models.ForeignKey(Profile, related_name='chatrooms',on_delete=models.SET_NULL, null=True, blank=True)
   is_active = models.BooleanField(default=True)
   class Meta:
     unique_together = (
@@ -83,16 +83,16 @@ class ChatRoom(TimeModel):
 class Message(TimeModel):
   chatroom = models.ForeignKey(ChatRoom, related_name='messages',on_delete=models.CASCADE)
   body = models.CharField(max_length=500)
-  written_by = models.ForeignKey(Profile, related_name='messages',on_delete=models.SET_NULL, null=True)
+  written_by = models.ForeignKey(Profile, related_name='messages',on_delete=models.SET_NULL, null=True, blank=True)
   
 class Transaction(TimeModel):
-  chatroom = models.ForeignKey(ChatRoom, related_name='appointment', on_delete=models.SET_NULL, null=True) 
+  chatroom = models.ForeignKey(ChatRoom, related_name='appointment', on_delete=models.SET_NULL, null=True, blank=True) 
   seller_review = models.PositiveSmallIntegerField(default=0)
   buyer_review = models.PositiveSmallIntegerField(default=0)
 
 
 class SuggestPrice(TimeModel):
   suggest_price = models.PositiveSmallIntegerField()
-  will_buyer = models.ForeignKey(Profile, related_name='suggest_price', on_delete=models.SET_NULL, null=True)
+  will_buyer = models.ForeignKey(Profile, related_name='suggest_price', on_delete=models.SET_NULL, null=True, blank=True)
   confirm = models.BooleanField(default=False)
-  product = models.ForeignKey(Product, related_name='suggest_prices',on_delete=models.SET_NULL, null=True)
+  product = models.ForeignKey(Product, related_name='suggest_prices',on_delete=models.SET_NULL, null=True, blank=True)
