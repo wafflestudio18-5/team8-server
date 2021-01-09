@@ -50,9 +50,10 @@ class Product(TimeModel):
   price = models.PositiveIntegerField()
   allow_suggest = models.BooleanField()
   status = models.PositiveIntegerField(default=2)
-  seller = models.ForeignKey(Profile, related_name='selling_products',on_delete=models.SET_NULL, null=True)
-  buyer = models.ForeignKey(Profile, related_name='bought_products',on_delete=models.SET_NULL, null=True)
+  seller = models.ForeignKey(Profile, related_name='selling_products',on_delete=models.SET_NULL, null=True, blank=True)
+  buyer = models.ForeignKey(Profile, related_name='bought_products',on_delete=models.SET_NULL, null=True, blank=True)
   body = models.CharField(max_length=150, blank=True)
+  
   count_comments = models.PositiveSmallIntegerField(default=0)
   count_likes = models.PositiveSmallIntegerField(default=0)
   count_views = models.PositiveSmallIntegerField(default=0)
